@@ -1,0 +1,96 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "success": "Success",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "search": "Search",
+    "filter": "Filter",
+    "sort": "Sort"
+  },
+  "nav": {
+    "home": "Home",
+    "courses": "Courses",
+    "dashboard": "Dashboard",
+    "profile": "Profile",
+    "logout": "Logout",
+    "login": "Login",
+    "signup": "Sign Up"
+  },
+  "hero": {
+    "title": "Master Data Analysis",
+    "subtitle": "Excel | R | Python - Learn from experts",
+    "cta_start": "Start for Free",
+    "cta_explore": "Explore Courses"
+  },
+  "auth": {
+    "login": {
+      "title": "Login",
+      "email": "Email",
+      "password": "Password",
+      "remember": "Remember me",
+      "forgot": "Forgot password?",
+      "submit": "Sign In",
+      "no_account": "No account?",
+      "signup_link": "Sign up",
+      "social_divider": "OR",
+      "google": "Continue with Google",
+      "github": "Continue with GitHub"
+    },
+    "signup": {
+      "title": "Create Account",
+      "step1_title": "Personal Information",
+      "step2_title": "Role and Preferences",
+      "step3_title": "Confirmation",
+      "first_name": "First Name",
+      "last_name": "Last Name",
+      "email": "Email",
+      "password": "Password",
+      "confirm_password": "Confirm Password",
+      "role_learner": "Learner",
+      "role_instructor": "Instructor",
+      "accept_terms": "I accept the terms and conditions",
+      "language": "Language",
+      "submit": "Create Account",
+      "has_account": "Already have an account?",
+      "login_link": "Sign in"
+    }
+  },
+  "courses": {
+    "title": "Course Catalog",
+    "filters": {
+      "all": "All courses",
+      "domain": "Domain",
+      "price": "Price",
+      "rating": "Rating",
+      "level": "Level"
+    },
+    "card": {
+      "by": "By",
+      "reviews": "reviews",
+      "hours": "h",
+      "free": "Free",
+      "view_details": "View Details"
+    }
+  },
+  "dashboard": {
+    "welcome": "Welcome",
+    "stats": {
+      "enrolled_courses": "Enrolled Courses",
+      "completed_courses": "Completed Courses",
+      "study_hours": "Study Hours",
+      "certificates": "Certificates"
+    },
+    "continue_learning": "Continue Learning",
+    "all_courses": "All My Courses",
+    "active": "Active",
+    "completed": "Completed",
+    "wishlist": "Wishlist"
+  }
+}
