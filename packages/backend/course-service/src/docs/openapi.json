@@ -1,0 +1,38 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "HAR Academy — Course Service API",
+    "version": "1.0.0",
+    "description": "Minimal OpenAPI spec for the Course Service"
+  },
+  "servers": [
+    { "url": "http://localhost:3002/api/v1" }
+  ],
+  "paths": {
+    "/courses": {
+      "get": {
+        "summary": "List courses",
+        "responses": {
+          "200": { "description": "A list of courses" }
+        }
+      },
+      "post": {
+        "summary": "Create a course (instructor)",
+        "responses": { "201": { "description": "Course created" } }
+      }
+    },
+    "/courses/{id}": {
+      "put": { "summary": "Update course" },
+      "delete": { "summary": "Delete course" }
+    },
+    "/enrollments": {
+      "post": { "summary": "Enroll in a course" }
+    },
+    "/reviews": {
+      "post": { "summary": "Create a review" }
+    },
+    "/categories": {
+      "get": { "summary": "List categories" }
+    }
+  }
+}

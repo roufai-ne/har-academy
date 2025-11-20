@@ -1,0 +1,194 @@
+version: '3.8'
+
+services:
+  # Databases
+  mongodb-auth:
+    image: mongo:7
+    container_name: har-mongodb-auth
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-mongopassword}
+      MONGO_INITDB_DATABASE: har_auth
+    volumes:
+      - mongodb-auth-data:/data/db
+    ports:
+      - "27019:27017"
+    networks:
+      - har-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongodb-courses:
+    image: mongo:7
+    container_name: har-mongodb-courses
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-mongopassword}
+      MONGO_INITDB_DATABASE: har_courses
+    volumes:
+      - mongodb-courses-data:/data/db
+    ports:
+      - "27017:27017"
+    networks:
+      - har-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongodb-payments:
+    image: mongo:7
+    container_name: har-mongodb-payments
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-mongopassword}
+      MONGO_INITDB_DATABASE: har_payments
+    volumes:
+      - mongodb-payments-data:/data/db
+    ports:
+      - "27018:27017"
+    networks:
+      - har-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: har-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - har-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend Services
+  auth-service:
+    build:
+      context: ./packages/backend/auth-service
+      dockerfile: Dockerfile
+    container_name: har-auth-service
+    environment:
+      PORT: 3001
+      NODE_ENV: ${NODE_ENV:-development}
+      MONGO_URI: mongodb://admin:${MONGO_PASSWORD:-mongopassword}@mongodb-auth:27017/har_auth?authSource=admin
+      JWT_SECRET: ${JWT_SECRET:-your-jwt-secret}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-your-refresh-secret}
+    ports:
+      - "3001:3001"
+    depends_on:
+      mongodb-auth:
+        condition: service_healthy
+    networks:
+      - har-network
+    restart: unless-stopped
+
+  course-service:
+    build:
+      context: ./packages/backend/course-service
+      dockerfile: Dockerfile
+    container_name: har-course-service
+    environment:
+      PORT: 3002
+      NODE_ENV: ${NODE_ENV:-development}
+      MONGO_URI: mongodb://admin:${MONGO_PASSWORD:-mongopassword}@mongodb-courses:27017/har_courses?authSource=admin
+      JWT_SECRET: ${JWT_SECRET:-your-jwt-secret}
+      AUTH_SERVICE_URL: http://auth-service:3001
+    ports:
+      - "3002:3002"
+    depends_on:
+      mongodb-courses:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+    networks:
+      - har-network
+    restart: unless-stopped
+
+  payment-service:
+    build:
+      context: ./packages/backend/payment-service
+      dockerfile: Dockerfile
+    container_name: har-payment-service
+    environment:
+      PORT: 3003
+      NODE_ENV: ${NODE_ENV:-development}
+      MONGO_URI: mongodb://admin:${MONGO_PASSWORD:-mongopassword}@mongodb-payments:27017/har_payments?authSource=admin
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
+      JWT_SECRET: ${JWT_SECRET:-your-jwt-secret}
+      COURSE_SERVICE_URL: http://course-service:3002
+      AUTH_SERVICE_URL: http://auth-service:3001
+      SERVICE_SECRET: ${SERVICE_SECRET:-service-secret}
+    ports:
+      - "3003:3003"
+    depends_on:
+      mongodb-payments:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+      course-service:
+        condition: service_started
+    networks:
+      - har-network
+    restart: unless-stopped
+
+  ai-service:
+    build:
+      context: ./packages/backend/ai-service
+      dockerfile: Dockerfile
+    container_name: har-ai-service
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      DEBUG: ${DEBUG:-true}
+    ports:
+      - "5000:5000"
+    networks:
+      - har-network
+    restart: unless-stopped
+
+  api-gateway:
+    build:
+      context: ./packages/backend/api-gateway
+      dockerfile: Dockerfile
+    container_name: har-api-gateway
+    environment:
+      PORT: 8000
+      NODE_ENV: ${NODE_ENV:-development}
+      CORS_ORIGIN: ${CORS_ORIGIN:-*}
+      AUTH_SERVICE_URL: http://auth-service:3001
+      COURSE_SERVICE_URL: http://course-service:3002
+      PAYMENT_SERVICE_URL: http://payment-service:3003
+      AI_SERVICE_URL: http://ai-service:5000
+    ports:
+      - "8000:8000"
+    depends_on:
+      - auth-service
+      - course-service
+      - payment-service
+      - ai-service
+    networks:
+      - har-network
+    restart: unless-stopped
+
+volumes:
+  mongodb-auth-data:
+  mongodb-courses-data:
+  mongodb-payments-data:
+  redis-data:
+
+networks:
+  har-network:
+    driver: bridge

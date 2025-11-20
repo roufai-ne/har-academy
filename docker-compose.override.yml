@@ -1,0 +1,45 @@
+version: '3.8'
+
+# Override configuration for local development
+# This adds MongoDB support for the course service
+
+services:
+  mongodb:
+    image: mongo:7-alpine
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: har_admin
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-mongopassword}
+      MONGO_INITDB_DATABASE: har_academy_courses
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+    healthcheck:
+      test: ["CMD", "mongosh", "--authenticationDatabase", "admin", "-u", "har_admin", "-p", "${MONGO_PASSWORD:-mongopassword}", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - default
+
+  course-service:
+    environment:
+      - MONGODB_URI=mongodb://har_admin:${MONGO_PASSWORD:-mongopassword}@mongodb:27017/har_academy_courses?authSource=admin
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - LOG_LEVEL=debug
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  mongodb_data:
+  mongodb_config:

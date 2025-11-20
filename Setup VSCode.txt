@@ -1,0 +1,269 @@
+# 1. Créer dossier projet
+mkdir har-academy
+cd har-academy
+git init
+
+# 2. Copier tous les fichiers d'indication
+# (copie les 8 artifacts ci-dessus dans le projet)
+
+# 3. Structure final:
+har-academy/
+├── PROMPT_01_ARCHITECTURE_GENERALE.md
+├── PROMPT_02_BACKEND_ET_DATA.md
+├── PROMPT_03_FRONTEND_ET_UX_UI.md
+├── PROMPT_04_AGENTS_IA_PEDAGOGIQUE.md
+├── STANDARDS_ET_CONVENTIONS.md
+├── CHECKLIST_VALIDATION.md
+├── GUIDE_DE_COORDINATION.md
+└── README.md
+```
+
+### **Step 2: Brief Agent 1 (Architecte) - Day 1**
+```
+Tu vas envoyer à l'agent IA:
+
+---
+
+"Tu es un expert en Architecture Système.
+
+Lire PROMPT_01_ARCHITECTURE_GENERALE.md complètement.
+
+Puis crée:
+
+1. Structure monorepo complète 
+   (packages/backend/, packages/frontend/, docs/)
+
+2. docker-compose.yml avec 6 services
+   (postgres, redis, api-gateway, auth, course, payment)
+
+3. Tous les Dockerfiles (7 fichiers)
+
+4. docs/ARCHITECTURE.md (diagrammes + explication)
+
+5. docs/API_CONTRACTS.md (contrats inter-services)
+
+6. .env.example avec variables
+
+7. README.md avec setup instructions
+
+Reference:
+- STANDARDS_ET_CONVENTIONS.md pour nommage
+- CHECKLIST_VALIDATION.md section Phase 0 pour validation
+
+Envoie-moi tous les fichiers générés."
+
+---
+
+✓ Agent génère → Copie dans VSCode → Commit Git
+✓ Valide: docker-compose up -d fonctionne?
+✓ Passe à Agent 2
+```
+
+### **Step 3: Brief Agent 2 (Backend) - Day 4**
+```
+"Tu es expert Node.js/Express Backend.
+
+Lire PROMPT_02_BACKEND_ET_DATA.md complètement.
+
+Phase 1 - Implémenter:
+
+1. Tous les 4 services (Auth, Course, Payment, AI-basic)
+   Structure selon STANDARDS_ET_CONVENTIONS.md
+
+2. 40+ API endpoints complets:
+   - 11 Auth endpoints
+   - 15+ Course endpoints
+   - 7 Payment endpoints
+   - 5 AI endpoints (basic)
+
+3. MongoDB schemas avec indexes
+
+4. Tests (80%+ coverage)
+
+5. Logging + Error handling
+
+6. Documentation (API contracts)
+
+References:
+- STANDARDS_ET_CONVENTIONS.md
+- CHECKLIST_VALIDATION.md Phase 1
+- docs/API_CONTRACTS.md (créé par architecte)
+
+Validation finale:
+docker-compose up -d
+npm run migrate
+npm run seed
+npm run test (all passing)
+curl http://localhost:8000/api/v1/health (200 OK)
+
+Envoie tous les fichiers générés."
+
+---
+
+✓ Copie dans VSCode → Git commit
+✓ Valide checklist Phase 1
+✓ Passe à Agent 3
+```
+
+### **Step 4: Brief Agent 3 (Frontend) - Day 10**
+```
+"Tu es expert React Frontend.
+
+Lire PROMPT_03_FRONTEND_ET_UX_UI.md complètement.
+
+Phase 2 - Implémenter:
+
+1. React app avec structure:
+   - pages/ (9+ pages)
+   - components/ (20+ composants)
+   - hooks/
+   - i18n/
+   - services/
+
+2. Toutes les pages:
+   Landing, Auth, Courses, Course Details, Learning Space, 
+   Dashboard, Profile, Instructor Dashboard, Create Course
+
+3. i18n complète:
+   FR + EN translations
+   Language switcher working
+
+4. API integration:
+   Appelle tous les endpoints Backend (Phase 1)
+
+5. Responsive design:
+   Mobile, Tablet, Desktop
+
+6. Tests (70%+ coverage)
+
+7. Lighthouse ≥ 90
+
+References:
+- STANDARDS_ET_CONVENTIONS.md
+- CHECKLIST_VALIDATION.md Phase 2
+- docs/API_CONTRACTS.md (du Backend)
+
+Prerequisite: Backend running on localhost:8000
+
+Validation finale:
+npm run dev (http://localhost:3000)
+Auth flow working?
+Courses loading?
+No console errors?
+
+Envoie tous les fichiers générés."
+
+---
+
+✓ Copie dans VSCode → Git commit
+✓ Valide checklist Phase 2
+✓ Full system test (Phase 3 - manual)
+✓ Passe à Agent 4
+```
+
+### **Step 5: Brief Agent 4 (AI/ML) - Day 18**
+```
+"Tu es expert ML/IA avec NLP.
+
+Lire PROMPT_04_AGENTS_IA_PEDAGOGIQUE.md complètement.
+
+Phase 4 - Implémenter:
+
+1. Python FastAPI AI Service
+
+2. Vector DB (ChromaDB):
+   Ingest cours content
+   Generate embeddings
+   Semantic search
+
+3. 5 Endpoints:
+   - Recommendations
+   - Quiz generator
+   - Chatbot RAG
+   - Chat history
+   - History delete
+
+4. LLM integration:
+   Claude ou OpenAI API
+   RAG with course context
+
+5. Tests (70%+ coverage)
+
+References:
+- STANDARDS_ET_CONVENTIONS.md
+- CHECKLIST_VALIDATION.md Phase 4
+- docs/API_CONTRACTS.md
+
+Prerequisite: Backend running with course data
+
+Validation finale:
+docker-compose up (all services running)
+POST /api/v1/ai/recommendations (works?)
+POST /api/v1/ai/generate-quiz (works?)
+POST /api/v1/ai/chat (works?)
+
+Envoie tous les fichiers générés."
+
+---
+
+✓ Copie dans VSCode → Git commit
+✓ Valide checklist Phase 4
+✓ Project COMPLETE!
+```
+
+---
+
+## 📊 Timeline Résumé
+
+| Phase | Agent | Durée | Status |
+|-------|-------|-------|--------|
+| 0 | Architecte | 2-3j | ← **START HERE** |
+| 1 | Backend | 5-7j | After Phase 0 ✓ |
+| 2 | Frontend | 5-7j | After Phase 1 ✓ |
+| 3 | Manual Test | 1-2j | After Phase 2 ✓ |
+| 4 | AI/ML | 5-7j | After Phase 1 ✓ |
+| **TOTAL** | - | **5-6 semaines** | MVP Ready |
+
+---
+
+## ✨ What Makes These Prompts Special
+
+✅ **Extrêmement détaillés** - Chaque endpoint, chaque page, chaque component spécifié  
+✅ **Prêts à l'emploi** - Agents peuvent commencer immédiatement  
+✅ **Coordonnés** - Chaque agent sait ce que les autres font  
+✅ **Validables** - Checklists exactes pour vérifier qualité  
+✅ **Standardisés** - Conventions appliquées partout  
+✅ **Documentés** - Guides & workflows fournis  
+
+---
+
+## 🎯 Résumé: Comment Ça Marche
+```
+TOI (Project Manager)
+  ↓
+PROMPT_01 → Agent Architecte → docker-compose.yml ✓
+  ↓
+PROMPT_02 → Agent Backend → 40+ endpoints ✓
+  ↓
+PROMPT_03 → Agent Frontend → 9+ pages ✓
+  ↓
+Manual Testing → Full LMS working ✓
+  ↓
+PROMPT_04 → Agent AI/ML → 5 endpoints ✓
+  ↓
+✅ Har Academy LMS COMPLETE & READY
+
+Durée totale: 5-6 semaines
+Code quality: Production-ready
+Test coverage: 75%+ average
+Documentation: 100% complete
+
+📁 Prochaines Actions
+
+Copy-paste les 8 artifacts dans VSCode (créer .md files)
+Git init + first commit "Project setup with prompts"
+Brief Agent 1 avec PROMPT_01 + STANDARDS + CHECKLIST
+Attendre Phase 0 (~3 jours)
+Brief Agent 2 avec PROMPT_02
+Continue phases selon timeline
+Celebrate 🎉 après Phase 4!
