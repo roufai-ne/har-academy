@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseSettings
+from pydantic_settings import BaseSettings
 import uvicorn
 
 class Settings(BaseSettings):
@@ -53,4 +53,4 @@ def root():
     }
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8001, reload=settings.debug)
+    uvicorn.run("main:app", host="0.0.0.0", port=5000, reload=settings.debug)

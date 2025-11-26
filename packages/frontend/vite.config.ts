@@ -11,6 +11,7 @@ export default defineConfig({
     },
   },
   server: {
+    // Changed to avoid conflict with backend services
     port: 3000,
     proxy: {
       '/api': {

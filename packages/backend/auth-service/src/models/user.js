@@ -17,7 +17,6 @@ const userSchema = new mongoose.Schema({
   password_hash: {
     type: String,
     required: true,
-    minlength: 60,
   },
   first_name: {
     type: String,
@@ -127,6 +126,8 @@ userSchema.methods.generateToken = function () {
       user_id: this._id,
       email: this.email,
       role: this.role,
+      first_name: this.first_name,
+      last_name: this.last_name,
     },
     process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRY || '24h' }

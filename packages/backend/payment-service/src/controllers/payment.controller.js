@@ -70,7 +70,7 @@ class PaymentController {
       const planPricing = {
         basic: { monthly: 9.99, yearly: 99.99 },
         pro: { monthly: 19.99, yearly: 199.99 },
-        premium: { monthly: 29.99, yearly: 299.99 }
+        enterprise: { monthly: 49.99, yearly: 499.99 }
       };
 
       const price = planPricing[plan][billingCycle];
@@ -207,6 +207,148 @@ class PaymentController {
       });
     } catch (error) {
       logger.error('Subscription cancellation failed:', error);
+      res.status(400).json({
+        success: false,
+        error: { message: error.message }
+      });
+    }
+  }
+
+  // Get user entitlements (purchased courses and subscription)
+  async getUserEntitlements(req, res) {
+    try {
+      const userId = req.params.userId;
+      
+      // Check authorization - users can only view their own or admins can view any
+      if (req.user.id !== userId && req.user.role !== 'admin') {
+        return res.status(403).json({
+          success: false,
+          error: { message: 'Unauthorized to view these entitlements' }
+        });
+      }
+
+      // Get active subscription
+      const subscription = await Subscription.findOne({ 
+        user: userId,
+        status: { $in: ['active', 'trialing'] }
+      });
+
+      // Get completed course purchases
+      const transactions = await Transaction.find({
+        user: userId,
+        type: 'course_purchase',
+        status: 'completed'
+      }).select('course amount currency completedAt');
+
+      // Get course IDs
+      const purchasedCourseIds = transactions.map(t => t.course);
+
+      res.json({
+        success: true,
+        data: {
+          subscription: subscription ? {
+            plan: subscription.plan,
+            status: subscription.status,
+            currentPeriodEnd: subscription.currentPeriodEnd,
+            cancelAtPeriodEnd: subscription.cancelAtPeriodEnd
+          } : null,
+          purchasedCourses: purchasedCourseIds,
+          transactions: transactions,
+          hasActiveSubscription: !!subscription
+        }
+      });
+    } catch (error) {
+      logger.error('Failed to fetch entitlements:', error);
+      res.status(400).json({
+        success: false,
+        error: { message: error.message }
+      });
+    }
+  }
+
+  // Refund transaction
+  async refundTransaction(req, res) {
+    try {
+      const { transactionId } = req.params;
+      const userId = req.user.id;
+      const { reason } = req.body;
+
+      const transaction = await Transaction.findById(transactionId);
+      
+      if (!transaction) {
+        return res.status(404).json({
+          success: false,
+          error: { message: 'Transaction not found' }
+        });
+      }
+
+      // Check ownership
+      if (transaction.user.toString() !== userId && req.user.role !== 'admin') {
+        return res.status(403).json({
+          success: false,
+          error: { message: 'Unauthorized to refund this transaction' }
+        });
+      }
+
+      // Check if transaction is refundable
+      if (transaction.status !== 'completed') {
+        return res.status(400).json({
+          success: false,
+          error: { message: 'Only completed transactions can be refunded' }
+        });
+      }
+
+      if (transaction.status === 'refunded') {
+        return res.status(400).json({
+          success: false,
+          error: { message: 'Transaction already refunded' }
+        });
+      }
+
+      // Check 14-day refund window
+      const daysSincePurchase = Math.floor((Date.now() - transaction.completedAt) / (1000 * 60 * 60 * 24));
+      if (daysSincePurchase > 14) {
+        return res.status(400).json({
+          success: false,
+          error: { message: 'Refund period expired. Refunds are only available within 14 days of purchase.' }
+        });
+      }
+
+      // Process refund with Stripe
+      if (transaction.stripePaymentIntentId) {
+        await stripeService.refundPayment(transaction.stripePaymentIntentId, reason);
+      }
+
+      // Update transaction
+      transaction.status = 'refunded';
+      transaction.refundReason = reason;
+      transaction.refundedAt = new Date();
+      await transaction.save();
+
+      // Revoke course access if applicable
+      if (transaction.course) {
+        try {
+          await axios.delete(
+            `${process.env.COURSE_SERVICE_URL}/api/v1/enrollments/${transaction.course}`,
+            {
+              headers: {
+                'X-Service-Auth': process.env.SERVICE_SECRET,
+                'X-User-Id': userId
+              }
+            }
+          );
+        } catch (error) {
+          logger.error('Failed to revoke course access:', error);
+        }
+      }
+
+      res.json({
+        success: true,
+        message: 'Transaction refunded successfully',
+        data: transaction
+      });
+    } catch (error) {
+      logger.error('Refund failed:', error);
       res.status(400).json({
         success: false,
         error: { message: error.message }

@@ -13,7 +13,7 @@ export function formatDate(date: string | Date): string {
   })
 }
 
-export function formatCurrency(amount: number, currency: string = 'EUR'): string {
+export function formatCurrency(amount: number, currency: string = 'XAF'): string {
   return new Intl.NumberFormat('fr-FR', {
     style: 'currency',
     currency,

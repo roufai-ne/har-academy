@@ -6,7 +6,6 @@ const rateLimit = require('express-rate-limit');
 const morgan = require('morgan');
 const winston = require('winston');
 const config = require('./config');
-const { verifyToken, optionalAuth } = require('./middleware/auth');
 
 const app = express();
 
@@ -29,6 +28,12 @@ app.use(cors(config.cors));
 app.use(morgan('combined', { stream: { write: msg => logger.info(msg.trim()) } }));
 app.use(express.json());
 
+// Log all incoming requests
+app.use((req, res, next) => {
+  console.log(`[Gateway] ${req.method} ${req.url} - Body:`, req.body);
+  next();
+});
+
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -46,54 +51,67 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Service routes with proxy configuration
-const createProxy = (target, pathRewrite) => {
-  return createProxyMiddleware({
-    target,
-    changeOrigin: true,
-    pathRewrite,
-    onProxyReq: (proxyReq, req, res) => {
-      // Forward user info if authenticated
-      if (req.user) {
-        proxyReq.setHeader('X-User-Id', req.user.id);
-        proxyReq.setHeader('X-User-Role', req.user.role);
-        proxyReq.setHeader('X-User-Email', req.user.email);
-      }
-      logger.info(`Proxying ${req.method} ${req.path} to ${target}`);
-    },
-    onError: (err, req, res) => {
-      logger.error(`Proxy error:`, err);
-      res.status(502).json({
-        success: false,
-        error: { message: 'Service unavailable' }
-      });
-    }
-  });
+// Service routes with proxy
+const services = {
+  auth: {
+    target: config.services.authService,
+    pathRewrite: { '^/api/v1/auth': '/api/v1/auth' }
+  },
+  courses: {
+    target: config.services.courseService,
+    pathRewrite: { '^/api/v1/courses': '/api/v1/courses' }
+  },
+  enrollments: {
+    target: config.services.courseService,
+    pathRewrite: { '^/api/v1/enrollments': '/api/v1/enrollments' }
+  },
+  payments: {
+    target: config.services.paymentService,
+    pathRewrite: { '^/api/v1/payments': '/api/v1/payments' }
+  },
+  ai: {
+    target: config.services.aiService,
+    pathRewrite: { '^/api/v1/ai': '/api/v1' }
+  }
 };
 
-// Auth routes (public + protected)
-app.use('/api/auth', createProxy(
-  config.services.authService,
-  { '^/api/auth': '/api/v1/auth' }
-));
-
-// Course routes (public listing, protected actions)
-app.use('/api/courses', optionalAuth, createProxy(
-  config.services.courseService,
-  { '^/api/courses': '/api/v1/courses' }
-));
-
-// Payment routes (protected)
-app.use('/api/payments', verifyToken, createProxy(
-  config.services.paymentService,
-  { '^/api/payments': '/api/v1/payments' }
-));
-
-// AI routes (protected)
-app.use('/api/ai', verifyToken, createProxy(
-  config.services.aiService,
-  { '^/api/ai': '/api/v1' }
-));
+// Create proxies
+Object.entries(services).forEach(([name, serviceConfig]) => {
+  console.log(`Setting up proxy for /api/v1/${name} -> ${serviceConfig.target}`);
+  app.use(
+    `/api/v1/${name}`,
+    createProxyMiddleware({
+      target: serviceConfig.target,
+      changeOrigin: true,
+      pathRewrite: serviceConfig.pathRewrite,
+      logLevel: 'debug',
+      onProxyReq: (proxyReq, req, res) => {
+        console.log(`[Proxy] ${req.method} ${req.url} -> ${serviceConfig.target}${proxyReq.path}`);
+        
+        // Re-stream the body if it exists
+        if (req.body) {
+          const bodyData = JSON.stringify(req.body);
+          proxyReq.setHeader('Content-Type', 'application/json');
+          proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
+          proxyReq.write(bodyData);
+        }
+        
+        logger.info(`Proxying ${req.method} ${req.path} to ${name} service`);
+      },
+      onProxyRes: (proxyRes, req, res) => {
+        console.log(`[Proxy Response] Status: ${proxyRes.statusCode}`);
+      },
+      onError: (err, req, res) => {
+        console.log(`[Proxy Error] ${err.message}`);
+        logger.error(`Proxy error for ${name} service:`, err);
+        res.status(502).json({
+          success: false,
+          error: { message: `Service ${name} unavailable` }
+        });
+      }
+    })
+  );
+});
 
 // 404 handler
 app.use((req, res) => {
@@ -116,11 +134,7 @@ app.use((err, req, res, next) => {
 const PORT = config.port;
 app.listen(PORT, () => {
   logger.info(`API Gateway running on port ${PORT}`);
-  logger.info('Proxying to services:');
-  logger.info(`  - Auth Service: ${config.services.authService}`);
-  logger.info(`  - Course Service: ${config.services.courseService}`);
-  logger.info(`  - Payment Service: ${config.services.paymentService}`);
-  logger.info(`  - AI Service: ${config.services.aiService}`);
+  logger.info(`Proxying to services: ${Object.keys(services).join(', ')}`);
 });
 
 module.exports = app;

@@ -141,11 +141,10 @@ class StripeService {
   }
 
   // Create refund
-  async createRefund(paymentIntentId, amount, reason) {
+  async refundPayment(paymentIntentId, reason) {
     try {
       const refund = await stripe.refunds.create({
         payment_intent: paymentIntentId,
-        amount: amount ? Math.round(amount * 100) : undefined,
         reason: reason || 'requested_by_customer'
       });
 

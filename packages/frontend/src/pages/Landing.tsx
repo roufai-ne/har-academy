@@ -73,7 +73,7 @@ export function LandingPage() {
                   </div>
                 </CardContent>
                 <CardFooter className="p-4 border-t flex justify-between items-center">
-                  <span className="font-bold text-lg">29.99 €</span>
+                  <span className="font-bold text-lg">19 650 FCFA</span>
                   <Button size="sm" asChild>
                     <Link to={`/courses/${i}`}>Voir détails</Link>
                   </Button>
@@ -124,7 +124,7 @@ export function LandingPage() {
               <CardHeader>
                 <CardTitle>Gratuit</CardTitle>
                 <CardDescription>Pour découvrir</CardDescription>
-                <div className="text-3xl font-bold mt-4">0 €<span className="text-sm font-normal text-gray-500">/mois</span></div>
+                <div className="text-3xl font-bold mt-4">0 FCFA<span className="text-sm font-normal text-gray-500">/mois</span></div>
               </CardHeader>
               <CardContent className="space-y-2">
                 <div className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-green-500" /> Accès aux cours gratuits</div>
@@ -140,8 +140,8 @@ export function LandingPage() {
               <div className="absolute top-0 right-0 bg-primary text-white text-xs px-2 py-1 rounded-bl">Populaire</div>
               <CardHeader>
                 <CardTitle>Pro</CardTitle>
-                <CardDescription>Pour les apprenants sérieux</CardDescription>
-                <div className="text-3xl font-bold mt-4">29 €<span className="text-sm font-normal text-gray-500">/mois</span></div>
+                <CardDescription>Pour les professionnels</CardDescription>
+                <div className="text-3xl font-bold mt-4">19 000 FCFA<span className="text-sm font-normal text-gray-500">/mois</span></div>
               </CardHeader>
               <CardContent className="space-y-2">
                 <div className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-green-500" /> Tout le contenu Gratuit</div>

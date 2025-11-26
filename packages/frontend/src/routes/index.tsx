@@ -21,6 +21,7 @@ import { LearningSpacePage } from '@/pages/LearningSpace'
 // Instructor Pages
 import { InstructorDashboard } from '@/pages/instructor/Dashboard'
 import { CreateCoursePage } from '@/pages/instructor/CreateCourse'
+import { EditCoursePage } from '@/pages/instructor/EditCourse'
 
 // Protected Route Component
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -87,6 +88,7 @@ export function AppRoutes() {
       >
         <Route path="/instructor/dashboard" element={<InstructorDashboard />} />
         <Route path="/instructor/create" element={<CreateCoursePage />} />
+        <Route path="/instructor/courses/:id/edit" element={<EditCoursePage />} />
       </Route>
 
       {/* Fallback */}

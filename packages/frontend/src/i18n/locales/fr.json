@@ -12,7 +12,9 @@
     "previous": "Précédent",
     "search": "Rechercher",
     "filter": "Filtrer",
-    "sort": "Trier"
+    "sort": "Trier",
+    "yes": "Oui",
+    "no": "Non"
   },
   "nav": {
     "home": "Accueil",
@@ -21,7 +23,9 @@
     "profile": "Profil",
     "logout": "Déconnexion",
     "login": "Connexion",
-    "signup": "S'inscrire"
+    "signup": "S'inscrire",
+    "my_courses": "Mes cours",
+    "create_course": "Créer un cours"
   },
   "hero": {
     "title": "Maîtrisez l'Analyse de Données",
@@ -32,12 +36,12 @@
   "auth": {
     "login": {
       "title": "Connexion",
-      "email": "Email",
+      "email": "Adresse email",
       "password": "Mot de passe",
       "remember": "Se souvenir de moi",
       "forgot": "Mot de passe oublié ?",
       "submit": "Se connecter",
-      "no_account": "Pas de compte ?",
+      "no_account": "Pas encore de compte ?",
       "signup_link": "S'inscrire",
       "social_divider": "OU",
       "google": "Continuer avec Google",
@@ -45,52 +49,120 @@
     },
     "signup": {
       "title": "Créer un compte",
-      "step1_title": "Données Personnelles",
-      "step2_title": "Rôle et Préférences",
+      "description": "Créez votre compte pour commencer à apprendre",
+      "step1_title": "Informations personnelles",
+      "step2_title": "Rôle et préférences",
       "step3_title": "Confirmation",
       "first_name": "Prénom",
       "last_name": "Nom",
-      "email": "Email",
+      "email": "Adresse email",
       "password": "Mot de passe",
       "confirm_password": "Confirmer le mot de passe",
+      "role": "Rôle",
       "role_learner": "Apprenant",
       "role_instructor": "Instructeur",
       "accept_terms": "J'accepte les conditions générales",
       "language": "Langue",
       "submit": "Créer mon compte",
-      "has_account": "Déjà un compte ?",
+      "has_account": "Vous avez déjà un compte ?",
       "login_link": "Se connecter"
     }
   },
   "courses": {
     "title": "Catalogue de cours",
+    "explore": "Explorer de nouveaux cours",
+    "my_courses": "Mes cours",
+    "no_courses": "Aucun cours disponible",
+    "no_enrollments": "Vous n'êtes inscrit à aucun cours pour le moment.",
     "filters": {
       "all": "Tous les cours",
       "domain": "Domaine",
       "price": "Prix",
       "rating": "Note",
-      "level": "Niveau"
+      "level": "Niveau",
+      "filter": "Filtrer"
+    },
+    "levels": {
+      "beginner": "Débutant",
+      "intermediate": "Intermédiaire",
+      "advanced": "Avancé"
     },
     "card": {
       "by": "Par",
       "reviews": "avis",
       "hours": "h",
       "free": "Gratuit",
-      "view_details": "Voir les détails"
+      "view_details": "Voir les détails",
+      "continue": "Continuer",
+      "start": "Commencer"
+    },
+    "detail": {
+      "overview": "Aperçu",
+      "curriculum": "Programme",
+      "instructor": "Instructeur",
+      "reviews": "Avis",
+      "enroll": "S'inscrire",
+      "enrolled": "Inscrit",
+      "what_you_learn": "Ce que vous allez apprendre",
+      "requirements": "Prérequis",
+      "description": "Description"
     }
   },
   "dashboard": {
     "welcome": "Bienvenue",
+    "ready_to_learn": "Prêt à continuer votre apprentissage aujourd'hui ?",
     "stats": {
       "enrolled_courses": "Cours inscrits",
       "completed_courses": "Cours terminés",
       "study_hours": "Heures d'étude",
-      "certificates": "Certificats"
+      "certificates": "Certificats",
+      "total_students": "Étudiants totaux",
+      "estimated_revenue": "Revenus estimés",
+      "published_courses": "Cours publiés",
+      "average_rating": "Note moyenne"
     },
     "continue_learning": "Continuer l'apprentissage",
     "all_courses": "Tous mes cours",
     "active": "Actifs",
     "completed": "Terminés",
     "wishlist": "Liste de souhaits"
+  },
+  "instructor": {
+    "dashboard": {
+      "title": "Tableau de bord instructeur",
+      "create_course": "Créer un nouveau cours",
+      "my_courses": "Mes cours",
+      "no_courses": "Vous n'avez pas encore créé de cours.",
+      "students": "étudiants",
+      "revenue": "Revenus",
+      "analytics": "Statistiques",
+      "edit": "Modifier",
+      "view_analytics": "Analytics",
+      "published": "Publié",
+      "draft": "Brouillon",
+      "archived": "Archivé"
+    },
+    "course": {
+      "create": "Créer un cours",
+      "edit": "Modifier le cours",
+      "title": "Titre du cours",
+      "description": "Description",
+      "price": "Prix (FCFA)",
+      "level": "Niveau",
+      "domain": "Domaine",
+      "language": "Langue",
+      "thumbnail": "Image de couverture",
+      "status": "Statut",
+      "draft": "Brouillon",
+      "published": "Publié",
+      "archived": "Archivé"
+    }
+  },
+  "profile": {
+    "title": "Mon profil",
+    "personal_info": "Informations personnelles",
+    "security": "Sécurité",
+    "preferences": "Préférences",
+    "notifications": "Notifications"
   }
 }

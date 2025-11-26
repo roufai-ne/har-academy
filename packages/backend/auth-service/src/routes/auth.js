@@ -28,17 +28,22 @@ const authLimiter = rateLimit({
 // Register
 router.post('/register', async (req, res, next) => {
   try {
+    console.log('Register request received:', req.body);
     const { error, value } = registerSchema.validate(req.body);
     if (error) {
+      console.log('Validation error:', error.details[0].message);
       throw new CustomError(error.details[0].message, 400, 'VALIDATION_ERROR');
     }
 
+    console.log('Validation passed, calling AuthService.register');
     const result = await AuthService.register(value);
+    console.log('Registration successful');
     res.status(201).json({
       success: true,
       data: result,
     });
   } catch (err) {
+    console.log('Registration error:', err.message);
     next(err);
   }
 });
@@ -46,17 +51,22 @@ router.post('/register', async (req, res, next) => {
 // Login
 router.post('/login', authLimiter, async (req, res, next) => {
   try {
+    console.log('Login request received:', { email: req.body.email });
     const { error, value } = loginSchema.validate(req.body);
     if (error) {
+      console.log('Login validation error:', error.details[0].message);
       throw new CustomError(error.details[0].message, 400, 'VALIDATION_ERROR');
     }
 
+    console.log('Validation passed, calling AuthService.login');
     const result = await AuthService.login(value.email, value.password);
+    console.log('Login successful');
     res.json({
       success: true,
       data: result,
     });
   } catch (err) {
+    console.log('Login error:', err.message);
     next(err);
   }
 });
@@ -104,17 +114,26 @@ router.get('/profile', authenticateToken, async (req, res, next) => {
 // Update Profile
 router.patch('/profile', authenticateToken, async (req, res, next) => {
   try {
+    console.log('PATCH /profile called with:', { 
+      userId: req.user?._id, 
+      body: req.body,
+      headers: req.headers 
+    });
+    
     const { error, value } = updateProfileSchema.validate(req.body);
     if (error) {
+      console.log('Validation error:', error.details[0].message);
       throw new CustomError(error.details[0].message, 400, 'VALIDATION_ERROR');
     }
 
     const profile = await AuthService.updateProfile(req.user._id, value);
+    console.log('Profile updated successfully');
     res.json({
       success: true,
       data: { user: profile },
     });
   } catch (err) {
+    console.log('Error updating profile:', err.message);
     next(err);
   }
 });
@@ -122,17 +141,22 @@ router.patch('/profile', authenticateToken, async (req, res, next) => {
 // Change Password
 router.post('/change-password', authenticateToken, async (req, res, next) => {
   try {
+    console.log('Change password request received:', { userId: req.user?._id, body: req.body });
     const { error, value } = changePasswordSchema.validate(req.body);
     if (error) {
+      console.log('Validation error:', error.details[0].message);
       throw new CustomError(error.details[0].message, 400, 'VALIDATION_ERROR');
     }
 
+    console.log('Calling AuthService.changePassword');
     await AuthService.changePassword(req.user._id, value.old_password, value.new_password);
+    console.log('Password changed successfully');
     res.json({
       success: true,
       message: 'Password changed successfully',
     });
   } catch (err) {
+    console.log('Change password error:', err.message);
     next(err);
   }
 });

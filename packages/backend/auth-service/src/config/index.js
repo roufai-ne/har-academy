@@ -3,7 +3,7 @@ require('dotenv').config();
 module.exports = {
   port: process.env.PORT || 3001,
   nodeEnv: process.env.NODE_ENV || 'development',
-  mongoUri: process.env.MONGO_URI || 'mongodb://localhost:27017/har_auth',
+  mongoUri: process.env.MONGO_URI || 'mongodb://localhost:27019/har_auth',
   jwt: {
     secret: process.env.JWT_SECRET || 'your-jwt-secret',
     refreshSecret: process.env.JWT_REFRESH_SECRET || 'your-refresh-secret',

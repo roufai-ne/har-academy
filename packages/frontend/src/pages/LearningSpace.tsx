@@ -1,37 +1,90 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { CheckCircle, PlayCircle, FileText, ChevronLeft, Menu, X } from 'lucide-react'
-
-// Mock Data
-const COURSE_CONTENT = {
-    id: 1,
-    title: "Analyse de Données avec Python",
-    sections: [
-        {
-            title: "Introduction",
-            lessons: [
-                { id: 101, title: "Bienvenue dans le cours", type: "video", duration: "2:30", completed: true },
-                { id: 102, title: "Installation de Python et Anaconda", type: "video", duration: "15:00", completed: true },
-                { id: 103, title: "Ressources du cours", type: "text", duration: "5:00", completed: false }
-            ]
-        },
-        {
-            title: "Les Bases de Python",
-            lessons: [
-                { id: 201, title: "Variables et Types", type: "video", duration: "12:00", completed: false },
-                { id: 202, title: "Listes et Dictionnaires", type: "video", duration: "18:00", completed: false },
-                { id: 203, title: "Boucles et Conditions", type: "video", duration: "20:00", completed: false },
-                { id: 204, title: "Exercice : Calculatrice Simple", type: "quiz", duration: "10:00", completed: false }
-            ]
-        }
-    ]
-}
+import { CheckCircle, PlayCircle, FileText, ChevronLeft, Menu, X, Loader2 } from 'lucide-react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { courseService } from '@/services/courseService'
 
 export function LearningSpacePage() {
     const { courseId } = useParams()
-    const [activeLesson, setActiveLesson] = useState(COURSE_CONTENT.sections[0].lessons[0])
+    const queryClient = useQueryClient()
     const [sidebarOpen, setSidebarOpen] = useState(true)
+    const [activeLesson, setActiveLesson] = useState<any>(null)
+
+    // Fetch course lessons (curriculum)
+    const { data: lessonsData, isLoading: isLoadingLessons } = useQuery({
+        queryKey: ['courseLessons', courseId],
+        queryFn: () => courseService.getCourseLessons(courseId!),
+        enabled: !!courseId
+    })
+
+    // Fetch user progress
+    const { data: progressData, isLoading: isLoadingProgress } = useQuery({
+        queryKey: ['courseProgress', courseId],
+        queryFn: () => courseService.getCourseProgress(courseId!),
+        enabled: !!courseId
+    })
+
+    const modules = lessonsData?.data?.modules || []
+    const course = lessonsData?.data?.course
+    const enrollment = progressData?.data?.enrollment
+    const progress = progressData?.data?.progress || 0
+
+    // Set initial active lesson
+    useEffect(() => {
+        if (modules.length > 0 && !activeLesson) {
+            // Try to find the first incomplete lesson or just the first lesson
+            const firstLesson = modules[0]?.lessons?.[0]
+            if (firstLesson) {
+                setActiveLesson(firstLesson)
+            }
+        }
+    }, [modules, activeLesson])
+
+    // Update progress mutation
+    const updateProgressMutation = useMutation({
+        mutationFn: (lessonId: string) => courseService.updateProgress(enrollment._id, lessonId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['courseProgress', courseId] })
+        }
+    })
+
+    const handleLessonComplete = () => {
+        if (activeLesson && enrollment) {
+            updateProgressMutation.mutate(activeLesson._id)
+        }
+    }
+
+    const isLessonCompleted = (lessonId: string) => {
+        if (!enrollment?.modulesProgress) return false
+        for (const mod of enrollment.modulesProgress) {
+            const lessonProg = mod.lessonsProgress.find((l: any) => l.lessonId === lessonId)
+            if (lessonProg?.completed) return true
+        }
+        return false
+    }
+
+    if (isLoadingLessons || isLoadingProgress) {
+        return (
+            <div className="flex h-screen items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+        )
+    }
+
+    if (!course || !activeLesson) {
+        return (
+            <div className="flex h-screen items-center justify-center">
+                <div className="text-center">
+                    <h1 className="text-2xl font-bold mb-2">Cours non trouvé</h1>
+                    <Link to="/dashboard">
+                        <Button>Retour au tableau de bord</Button>
+                    </Link>
+                </div>
+            </div>
+        )
+    }
+
 
     return (
         <div className="flex h-screen bg-gray-100 dark:bg-gray-900 overflow-hidden">
@@ -51,44 +104,47 @@ export function LearningSpacePage() {
                     </div>
 
                     <div className="p-4 border-b">
-                        <h2 className="font-bold text-lg leading-tight">{COURSE_CONTENT.title}</h2>
+                        <h2 className="font-bold text-lg leading-tight">{course.title}</h2>
                         <div className="mt-2 w-full bg-gray-200 rounded-full h-1.5">
-                            <div className="bg-green-500 h-1.5 rounded-full w-[35%]" />
+                            <div className="bg-green-500 h-1.5 rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
                         </div>
-                        <div className="mt-1 text-xs text-gray-500 text-right">35% terminé</div>
+                        <div className="mt-1 text-xs text-gray-500 text-right">{Math.round(progress)}% terminé</div>
                     </div>
 
                     <div className="flex-1 overflow-y-auto">
-                        {COURSE_CONTENT.sections.map((section, sIdx) => (
+                        {modules.map((section: any, sIdx: number) => (
                             <div key={sIdx}>
                                 <div className="px-4 py-3 bg-gray-50 dark:bg-gray-900/50 font-medium text-sm border-b">
                                     {section.title}
                                 </div>
                                 <div>
-                                    {section.lessons.map((lesson) => (
-                                        <button
-                                            key={lesson.id}
-                                            onClick={() => setActiveLesson(lesson)}
-                                            className={`w-full px-4 py-3 flex items-start gap-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors border-b border-gray-100 dark:border-gray-800 ${activeLesson.id === lesson.id ? 'bg-blue-50 dark:bg-blue-900/20 border-l-4 border-l-primary' : ''
-                                                }`}
-                                        >
-                                            <div className="mt-0.5">
-                                                {lesson.completed ? (
-                                                    <CheckCircle className="w-4 h-4 text-green-500" />
-                                                ) : lesson.type === 'video' ? (
-                                                    <PlayCircle className="w-4 h-4 text-gray-400" />
-                                                ) : (
-                                                    <FileText className="w-4 h-4 text-gray-400" />
-                                                )}
-                                            </div>
-                                            <div>
-                                                <div className={`text-sm ${activeLesson.id === lesson.id ? 'font-medium text-primary' : 'text-gray-700 dark:text-gray-300'}`}>
-                                                    {lesson.title}
+                                    {section.lessons?.map((lesson: any) => {
+                                        const completed = isLessonCompleted(lesson._id)
+                                        return (
+                                            <button
+                                                key={lesson._id}
+                                                onClick={() => setActiveLesson(lesson)}
+                                                className={`w-full px-4 py-3 flex items-start gap-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors border-b border-gray-100 dark:border-gray-800 ${activeLesson._id === lesson._id ? 'bg-blue-50 dark:bg-blue-900/20 border-l-4 border-l-primary' : ''
+                                                    }`}
+                                            >
+                                                <div className="mt-0.5">
+                                                    {completed ? (
+                                                        <CheckCircle className="w-4 h-4 text-green-500" />
+                                                    ) : lesson.type === 'video' ? (
+                                                        <PlayCircle className="w-4 h-4 text-gray-400" />
+                                                    ) : (
+                                                        <FileText className="w-4 h-4 text-gray-400" />
+                                                    )}
                                                 </div>
-                                                <div className="text-xs text-gray-400 mt-0.5">{lesson.duration}</div>
-                                            </div>
-                                        </button>
-                                    ))}
+                                                <div>
+                                                    <div className={`text-sm ${activeLesson._id === lesson._id ? 'font-medium text-primary' : 'text-gray-700 dark:text-gray-300'}`}>
+                                                        {lesson.title}
+                                                    </div>
+                                                    <div className="text-xs text-gray-400 mt-0.5">{lesson.duration_seconds ? Math.round(lesson.duration_seconds / 60) + 'm' : ''}</div>
+                                                </div>
+                                            </button>
+                                        )
+                                    })}
                                 </div>
                             </div>
                         ))}
@@ -103,7 +159,7 @@ export function LearningSpacePage() {
                     <button onClick={() => setSidebarOpen(true)}>
                         <Menu className="w-6 h-6" />
                     </button>
-                    <span className="font-bold truncate">{COURSE_CONTENT.title}</span>
+                    <span className="font-bold truncate">{course.title}</span>
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-4 md:p-8">
@@ -132,19 +188,27 @@ export function LearningSpacePage() {
 
                         <div className="flex justify-between items-center">
                             <h1 className="text-2xl font-bold">{activeLesson.title}</h1>
-                            <Button variant="outline" onClick={() => { }}>Marquer comme terminé</Button>
+                            <Button
+                                variant={isLessonCompleted(activeLesson._id) ? "secondary" : "default"}
+                                onClick={handleLessonComplete}
+                                disabled={updateProgressMutation.isPending}
+                            >
+                                {updateProgressMutation.isPending ? (
+                                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                                ) : isLessonCompleted(activeLesson._id) ? (
+                                    <>
+                                        <CheckCircle className="w-4 h-4 mr-2" /> Terminé
+                                    </>
+                                ) : (
+                                    "Marquer comme terminé"
+                                )}
+                            </Button>
                         </div>
 
                         <div className="prose dark:prose-invert max-w-none">
                             <h3>À propos de cette leçon</h3>
-                            <p>
-                                Dans cette leçon, nous allons explorer les concepts fondamentaux nécessaires pour comprendre la suite du cours.
-                                Assurez-vous de bien prendre des notes et de pratiquer les exemples donnés.
-                            </p>
-                            <p>
-                                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-                                Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-                            </p>
+                            <p>{activeLesson.description}</p>
+                            <div dangerouslySetInnerHTML={{ __html: activeLesson.content || '' }} />
                         </div>
                     </div>
                 </div>

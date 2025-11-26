@@ -10,9 +10,16 @@ class AuthService {
     }
 
     const user = new User({
-      ...userData,
+      email: userData.email,
+      first_name: userData.first_name,
+      last_name: userData.last_name,
+      role: userData.role || 'learner',
+      language: userData.language || 'fr',
       password_hash: userData.password, // Will be hashed by mongoose middleware
     });
+    
+    // Explicitly mark password_hash as modified to trigger pre-save hook
+    user.markModified('password_hash');
 
     await user.save();
     logger.info('New user registered:', { userId: user._id, email: user.email });

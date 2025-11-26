@@ -31,6 +31,12 @@ const courseSchema = new Schema({
     required: true,
     index: true
   },
+  level: {
+    type: String,
+    enum: ['Beginner', 'Intermediate', 'Advanced'],
+    required: true,
+    index: true
+  },
   stack: [{
     type: String,
     trim: true
@@ -54,7 +60,6 @@ const courseSchema = new Schema({
   },
   instructor_id: {
     type: Schema.Types.ObjectId,
-    ref: 'User',
     required: true,
     index: true
   },
@@ -111,7 +116,7 @@ const courseSchema = new Schema({
   },
   category: {
     type: String,
-    required: true,
+    required: false,
     index: true
   },
   language: {

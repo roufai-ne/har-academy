@@ -1,57 +1,50 @@
-import { useParams, Link } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Clock, Users, Star, CheckCircle, PlayCircle, FileText, Award } from 'lucide-react'
 
-// Mock data - in real app, fetch based on ID
-const COURSE_DATA = {
-    id: 1,
-    title: "Analyse de Données avec Python : De Zéro à Héros",
-    description: "Apprenez à analyser des données complexes, créer des visualisations époustouflantes et utiliser des algorithmes de Machine Learning avec Python. Ce cours complet vous guidera à travers toutes les étapes, de l'installation de l'environnement à la création de modèles prédictifs.",
-    instructor: {
-        name: "Jean Dupont",
-        role: "Senior Data Scientist",
-        bio: "Jean est un expert en Data Science avec plus de 10 ans d'expérience. Il a travaillé pour des grandes entreprises tech et enseigne Python depuis 5 ans.",
-        avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&auto=format&fit=crop&q=60"
-    },
-    rating: 4.8,
-    reviews: 124,
-    duration: "12h 30m",
-    students: 1200,
-    price: 29.99,
-    level: "Débutant",
-    lastUpdated: "Novembre 2023",
-    language: "Français",
-    curriculum: [
-        {
-            title: "Introduction à Python",
-            lessons: [
-                { title: "Installation et Configuration", duration: "10m", type: "video" },
-                { title: "Variables et Types de Données", duration: "15m", type: "video" },
-                { title: "Quiz : Les bases", duration: "5m", type: "quiz" }
-            ]
-        },
-        {
-            title: "Manipulation de Données avec Pandas",
-            lessons: [
-                { title: "Introduction aux DataFrames", duration: "20m", type: "video" },
-                { title: "Nettoyage de Données", duration: "25m", type: "video" },
-                { title: "Exercice Pratique", duration: "30m", type: "exercise" }
-            ]
-        }
-    ],
-    whatYouWillLearn: [
-        "Maîtriser la syntaxe Python",
-        "Utiliser Pandas pour l'analyse de données",
-        "Créer des visualisations avec Matplotlib et Seaborn",
-        "Comprendre les bases du Machine Learning"
-    ]
-}
+// Mock data removed
+
+import { useQuery } from '@tanstack/react-query'
+import { courseService } from '@/services/courseService'
+import { Loader2 } from 'lucide-react'
 
 export function CourseDetailPage() {
-    const { id } = useParams()
-    // In a real app, useQuery to fetch course by id
-    const course = COURSE_DATA
+    const { id: slug } = useParams()
+
+    const { data: courseData, isLoading: isLoadingCourse } = useQuery({
+        queryKey: ['course', slug],
+        queryFn: () => courseService.getCourseBySlug(slug!)
+    })
+
+    const course = courseData?.data
+
+    const { data: lessonsData, isLoading: isLoadingLessons } = useQuery({
+        queryKey: ['courseLessons', course?._id],
+        queryFn: () => courseService.getCourseLessons(course._id),
+        enabled: !!course?._id
+    })
+
+    const curriculum = lessonsData?.data?.modules || []
+
+    if (isLoadingCourse) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+        )
+    }
+
+    if (!course) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="text-center">
+                    <h1 className="text-2xl font-bold mb-2">Cours non trouvé</h1>
+                    <p className="text-gray-500">Le cours que vous cherchez n'existe pas ou a été supprimé.</p>
+                </div>
+            </div>
+        )
+    }
 
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-12">
@@ -85,7 +78,7 @@ export function CourseDetailPage() {
                                     <Clock className="w-4 h-4" /> {course.duration}
                                 </div>
                                 <div className="text-gray-300">
-                                    Mis à jour : {course.lastUpdated}
+                                    Mis à jour : {new Date(course.updatedAt).toLocaleDateString()}
                                 </div>
                             </div>
                         </div>
@@ -106,7 +99,7 @@ export function CourseDetailPage() {
                             </CardHeader>
                             <CardContent>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                    {course.whatYouWillLearn.map((item, index) => (
+                                    {course.keywords?.map((item: string, index: number) => (
                                         <div key={index} className="flex items-start gap-2">
                                             <CheckCircle className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
                                             <span className="text-sm">{item}</span>
@@ -120,21 +113,21 @@ export function CourseDetailPage() {
                         <Card>
                             <CardHeader>
                                 <CardTitle>Contenu du cours</CardTitle>
-                                <CardDescription>{course.curriculum.length} sections • {course.curriculum.reduce((acc, sec) => acc + sec.lessons.length, 0)} leçons</CardDescription>
+                                <CardDescription>{curriculum.length} sections • {course.total_lessons} leçons</CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-4">
-                                {course.curriculum.map((section, idx) => (
+                                {curriculum.map((section: any, idx: number) => (
                                     <div key={idx} className="border rounded-lg overflow-hidden">
                                         <div className="bg-gray-100 dark:bg-gray-800 p-4 font-medium flex justify-between items-center">
                                             <span>{section.title}</span>
-                                            <span className="text-xs text-gray-500">{section.lessons.length} leçons</span>
+                                            <span className="text-xs text-gray-500">{section.lessons?.length || 0} leçons</span>
                                         </div>
                                         <div className="divide-y">
-                                            {section.lessons.map((lesson, lIdx) => (
+                                            {section.lessons?.map((lesson: any, lIdx: number) => (
                                                 <div key={lIdx} className="p-3 pl-6 flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
                                                     {lesson.type === 'video' ? <PlayCircle className="w-4 h-4 text-gray-400" /> : <FileText className="w-4 h-4 text-gray-400" />}
                                                     <span className="text-sm">{lesson.title}</span>
-                                                    <span className="text-xs text-gray-400 ml-auto">{lesson.duration}</span>
+                                                    <span className="text-xs text-gray-400 ml-auto">{lesson.duration_seconds ? Math.round(lesson.duration_seconds / 60) + 'm' : ''}</span>
                                                 </div>
                                             ))}
                                         </div>
@@ -150,11 +143,11 @@ export function CourseDetailPage() {
                             </CardHeader>
                             <CardContent>
                                 <div className="flex flex-col sm:flex-row gap-4">
-                                    <img src={course.instructor.avatar} alt={course.instructor.name} className="w-24 h-24 rounded-full object-cover" />
+                                    <img src={course.instructor?.avatar || "https://github.com/shadcn.png"} alt={course.instructor?.name} className="w-24 h-24 rounded-full object-cover" />
                                     <div className="space-y-2">
-                                        <h3 className="font-bold text-lg">{course.instructor.name}</h3>
-                                        <div className="text-primary text-sm">{course.instructor.role}</div>
-                                        <p className="text-sm text-gray-600">{course.instructor.bio}</p>
+                                        <h3 className="font-bold text-lg">{course.instructor?.name || course.instructor_name}</h3>
+                                        <div className="text-primary text-sm">{course.instructor?.role || 'Instructor'}</div>
+                                        <p className="text-sm text-gray-600">{course.instructor?.bio || ''}</p>
                                     </div>
                                 </div>
                             </CardContent>
@@ -167,7 +160,7 @@ export function CourseDetailPage() {
                             <Card className="overflow-hidden shadow-xl border-t-4 border-t-primary">
                                 <div className="h-48 bg-gray-200 relative">
                                     <img
-                                        src="https://images.unsplash.com/photo-1543286386-713df548e9cc?w=800&auto=format&fit=crop&q=60"
+                                        src={course.image_url || "https://images.unsplash.com/photo-1543286386-713df548e9cc?w=800&auto=format&fit=crop&q=60"}
                                         alt="Course preview"
                                         className="w-full h-full object-cover"
                                     />
@@ -176,7 +169,7 @@ export function CourseDetailPage() {
                                     </div>
                                 </div>
                                 <CardContent className="p-6 space-y-6">
-                                    <div className="text-3xl font-bold text-center">{course.price} €</div>
+                                    <div className="text-3xl font-bold text-center">{(course.price?.amount || course.price).toLocaleString()} FCFA</div>
                                     <Button className="w-full text-lg py-6" size="lg">Ajouter au panier</Button>
                                     <Button variant="outline" className="w-full">Acheter maintenant</Button>
 

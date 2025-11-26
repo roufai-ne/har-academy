@@ -6,61 +6,9 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Search, Filter, Star, Clock, Users, BookOpen } from 'lucide-react'
 
-// Mock data for development
-const MOCK_COURSES = [
-    {
-        id: 1,
-        title: "Analyse de Données avec Python",
-        instructor: "Jean Dupont",
-        rating: 4.8,
-        reviews: 124,
-        duration: "12h",
-        students: 1200,
-        price: 29.99,
-        level: "Débutant",
-        domain: "Python",
-        image: "https://images.unsplash.com/photo-1543286386-713df548e9cc?w=800&auto=format&fit=crop&q=60"
-    },
-    {
-        id: 2,
-        title: "Maîtriser Excel pour la Finance",
-        instructor: "Marie Martin",
-        rating: 4.9,
-        reviews: 89,
-        duration: "8h",
-        students: 850,
-        price: 19.99,
-        level: "Intermédiaire",
-        domain: "Excel",
-        image: "https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&auto=format&fit=crop&q=60"
-    },
-    {
-        id: 3,
-        title: "R pour les Data Scientists",
-        instructor: "Pierre Durand",
-        rating: 4.7,
-        reviews: 56,
-        duration: "15h",
-        students: 600,
-        price: 34.99,
-        level: "Avancé",
-        domain: "R",
-        image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&auto=format&fit=crop&q=60"
-    },
-    {
-        id: 4,
-        title: "Visualisation de Données avec Tableau",
-        instructor: "Sophie Bernard",
-        rating: 4.6,
-        reviews: 42,
-        duration: "10h",
-        students: 400,
-        price: 24.99,
-        level: "Débutant",
-        domain: "Data Viz",
-        image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&auto=format&fit=crop&q=60"
-    }
-]
+import { useQuery } from '@tanstack/react-query'
+import { courseService } from '@/services/courseService'
+import { Loader2 } from 'lucide-react'
 
 export function CoursesPage() {
     const { t } = useTranslation()
@@ -68,15 +16,16 @@ export function CoursesPage() {
     const [selectedDomain, setSelectedDomain] = useState<string | null>(null)
     const [selectedLevel, setSelectedLevel] = useState<string | null>(null)
 
-    // Filter logic
-    const filteredCourses = MOCK_COURSES.filter(course => {
-        const matchesSearch = course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            course.instructor.toLowerCase().includes(searchQuery.toLowerCase())
-        const matchesDomain = selectedDomain ? course.domain === selectedDomain : true
-        const matchesLevel = selectedLevel ? course.level === selectedLevel : true
-
-        return matchesSearch && matchesDomain && matchesLevel
+    const { data: coursesData, isLoading } = useQuery({
+        queryKey: ['courses', searchQuery, selectedDomain, selectedLevel],
+        queryFn: () => courseService.getAllCourses({
+            search: searchQuery,
+            category: selectedDomain,
+            level: selectedLevel
+        })
     })
+
+    const courses = coursesData?.data || []
 
     return (
         <div className="container mx-auto px-4 py-8">
@@ -146,47 +95,53 @@ export function CoursesPage() {
                     </div>
 
                     {/* Course Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {filteredCourses.map(course => (
-                            <Card key={course.id} className="overflow-hidden hover:shadow-lg transition-shadow flex flex-col">
-                                <div className="h-48 bg-gray-200 relative">
-                                    <img
-                                        src={course.image}
-                                        alt={course.title}
-                                        className="w-full h-full object-cover"
-                                    />
-                                    <div className="absolute top-2 right-2 bg-white px-2 py-1 rounded text-xs font-bold shadow-sm flex items-center gap-1">
-                                        {course.rating} <Star className="w-3 h-3 text-yellow-400 fill-current" />
-                                        <span className="text-gray-400 font-normal">({course.reviews})</span>
+                    {isLoading ? (
+                        <div className="flex justify-center py-12">
+                            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {courses.map((course: any) => (
+                                <Card key={course._id} className="overflow-hidden hover:shadow-lg transition-shadow flex flex-col">
+                                    <div className="h-48 bg-gray-200 relative">
+                                        <img
+                                            src={course.thumbnail || "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&auto=format&fit=crop&q=60"}
+                                            alt={course.title}
+                                            className="w-full h-full object-cover"
+                                        />
+                                        <div className="absolute top-2 right-2 bg-white px-2 py-1 rounded text-xs font-bold shadow-sm flex items-center gap-1">
+                                            {course.rating || 0} <Star className="w-3 h-3 text-yellow-400 fill-current" />
+                                            <span className="text-gray-400 font-normal">({course.reviews?.length || 0})</span>
+                                        </div>
                                     </div>
-                                </div>
-                                <CardHeader className="p-4 pb-2">
-                                    <div className="flex justify-between items-start">
-                                        <div className="text-xs font-medium text-primary mb-1 uppercase">{course.domain}</div>
-                                        <div className="text-xs bg-gray-100 px-2 py-0.5 rounded text-gray-600">{course.level}</div>
-                                    </div>
-                                    <CardTitle className="text-lg line-clamp-2 h-14">{course.title}</CardTitle>
-                                    <CardDescription className="text-sm line-clamp-1">{t('courses.card.by')} {course.instructor}</CardDescription>
-                                </CardHeader>
-                                <CardContent className="p-4 pt-2 text-sm text-gray-600 flex gap-4 mt-auto">
-                                    <div className="flex items-center gap-1">
-                                        <Clock className="w-4 h-4" /> {course.duration}
-                                    </div>
-                                    <div className="flex items-center gap-1">
-                                        <Users className="w-4 h-4" /> {course.students}
-                                    </div>
-                                </CardContent>
-                                <CardFooter className="p-4 border-t flex justify-between items-center">
-                                    <span className="font-bold text-lg">{course.price} €</span>
-                                    <Button size="sm" asChild>
-                                        <Link to={`/courses/${course.id}`}>{t('courses.card.view_details')}</Link>
-                                    </Button>
-                                </CardFooter>
-                            </Card>
-                        ))}
-                    </div>
+                                    <CardHeader className="p-4 pb-2">
+                                        <div className="flex justify-between items-start">
+                                            <div className="text-xs font-medium text-primary mb-1 uppercase">{course.category}</div>
+                                            <div className="text-xs bg-gray-100 px-2 py-0.5 rounded text-gray-600">{course.level}</div>
+                                        </div>
+                                        <CardTitle className="text-lg line-clamp-2 h-14">{course.title}</CardTitle>
+                                        <CardDescription className="text-sm line-clamp-1">{t('courses.card.by')} {course.instructor?.name || 'Instructor'}</CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="p-4 pt-2 text-sm text-gray-600 flex gap-4 mt-auto">
+                                        <div className="flex items-center gap-1">
+                                            <Clock className="w-4 h-4" /> {course.duration || 0}h
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                            <Users className="w-4 h-4" /> {course.enrollmentsCount || 0}
+                                        </div>
+                                    </CardContent>
+                                    <CardFooter className="p-4 border-t flex justify-between items-center">
+                                        <span className="font-bold text-lg">{course.price.toLocaleString()} FCFA</span>
+                                        <Button size="sm" asChild>
+                                            <Link to={`/courses/${course.slug}`}>{t('courses.card.view_details')}</Link>
+                                        </Button>
+                                    </CardFooter>
+                                </Card>
+                            ))}
+                        </div>
+                    )}
 
-                    {filteredCourses.length === 0 && (
+                    {!isLoading && courses.length === 0 && (
                         <div className="text-center py-12">
                             <BookOpen className="w-12 h-12 text-gray-300 mx-auto mb-4" />
                             <h3 className="text-lg font-medium text-gray-900">Aucun cours trouvé</h3>

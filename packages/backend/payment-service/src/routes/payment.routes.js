@@ -13,7 +13,7 @@ const purchaseSchema = Joi.object({
 });
 
 const subscriptionSchema = Joi.object({
-  plan: Joi.string().valid('basic', 'pro', 'premium').required(),
+  plan: Joi.string().valid('basic', 'pro', 'enterprise').required(),
   billingCycle: Joi.string().valid('monthly', 'yearly').default('monthly')
 });
 
@@ -26,7 +26,9 @@ router.post('/purchase', authenticate, validate(purchaseSchema), paymentControll
 router.post('/subscriptions', authenticate, validate(subscriptionSchema), paymentController.createSubscription);
 router.get('/transactions', authenticate, paymentController.getTransactions);
 router.get('/subscription', authenticate, paymentController.getSubscription);
+router.get('/user/:userId/entitlements', authenticate, paymentController.getUserEntitlements);
 router.post('/subscription/cancel', authenticate, validate(cancelSchema), paymentController.cancelSubscription);
+router.post('/transactions/:transactionId/refund', authenticate, paymentController.refundTransaction);
 router.post('/webhook', express.raw({ type: 'application/json' }), paymentController.handleWebhook);
 
 module.exports = router;

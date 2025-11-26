@@ -16,7 +16,7 @@ const connectDB = async () => {
 };
 
 // Export models
-const User = require('./User');
+const User = require('./user');
 
 module.exports = {
   connectDB,
