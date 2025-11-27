@@ -13,9 +13,9 @@ class AuthController {
       // Check if user exists
       const existingUser = await User.findByEmail(email);
       if (existingUser) {
-        return res.status(400).json({
+        return res.status(409).json({
           success: false,
-          error: { message: 'Email already registered' }
+          error: { message: 'Email already exists' }
         });
       }
 
@@ -126,7 +126,7 @@ class AuthController {
   // Get current user
   async getMe(req, res) {
     try {
-      const user = await User.findById(req.user.id);
+      const user = await User.findById(req.user.user_id);
       
       if (!user) {
         return res.status(404).json({
@@ -153,7 +153,7 @@ class AuthController {
     try {
       const { first_name, last_name, avatar_url, language, instructor_info, notification_settings } = req.body;
 
-      const user = await User.findById(req.user.id);
+      const user = await User.findById(req.user.user_id);
       if (!user) {
         return res.status(404).json({
           success: false,
@@ -205,7 +205,7 @@ class AuthController {
     try {
       const { currentPassword, newPassword } = req.body;
 
-      const user = await User.findById(req.user.id);
+      const user = await User.findById(req.user.user_id);
       if (!user) {
         return res.status(404).json({
           success: false,

@@ -11,7 +11,7 @@ const validate = (schema) => {
       return res.status(400).json({
         success: false,
         error: {
-          message: 'Validation failed',
+          message: errors.length > 0 ? errors[0].message : 'Validation failed',
           details: errors
         }
       });

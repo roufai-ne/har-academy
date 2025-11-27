@@ -19,7 +19,10 @@ class AuthService {
     });
     
     // Explicitly mark password_hash as modified to trigger pre-save hook
-    user.markModified('password_hash');
+    // Only call markModified if using a real mongoose document (mocks may not implement it)
+    if (typeof user.markModified === 'function') {
+      user.markModified('password_hash');
+    }
 
     await user.save();
     logger.info('New user registered:', { userId: user._id, email: user.email });

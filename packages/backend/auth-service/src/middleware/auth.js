@@ -16,7 +16,7 @@ const authenticate = async (req, res, next) => {
     const decoded = jwt.verify(token, config.jwt.secret);
     
     // Verify user still exists and is active
-    const user = await User.findById(decoded.id);
+    const user = await User.findById(decoded.user_id);
     if (!user || user.status !== 'active') {
       return res.status(401).json({
         success: false,

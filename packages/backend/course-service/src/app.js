@@ -6,14 +6,28 @@ const compression = require('compression');
 const config = require('./config');
 const connectDB = require('./utils/db');
 const logger = require('./utils/logger');
+const redisClient = require('./utils/redis-client');
 const errorHandler = require('./middleware/error.middleware');
 const routes = require('./routes');
 
 // Create Express app
 const app = express();
 
-// Connect to MongoDB
-connectDB();
+// Connect to MongoDB only if not in test mode or if explicitly needed
+if (process.env.NODE_ENV !== 'test') {
+  connectDB();
+  
+  // Connect to Redis (optional, continues without it)
+  redisClient.connect().then(() => {
+    if (redisClient.isConnected) {
+      logger.info('Redis connection established');
+    } else {
+      logger.warn('Redis not available, continuing without cache');
+    }
+  }).catch(err => {
+    logger.warn('Redis connection failed, continuing without cache:', err.message);
+  });
+}
 
 // Middleware
 app.use(helmet());
@@ -53,23 +67,26 @@ app.use((req, res) => {
 // Error handler
 app.use(errorHandler);
 
-// Start server
-const server = app.listen(config.app.port, () => {
-  logger.info(`Server running in ${config.app.env} mode on port ${config.app.port}`);
-});
-
-// Handle unhandled promise rejections
-process.on('unhandledRejection', (err) => {
-  logger.error('Unhandled Promise Rejection:', err);
-  // Close server & exit process
-  server.close(() => process.exit(1));
-});
-
-// Handle uncaught exceptions
-process.on('uncaughtException', (err) => {
-  logger.error('Uncaught Exception:', err);
-  // Close server & exit process
-  server.close(() => process.exit(1));
-});
-
+// Export app for testing
 module.exports = app;
+
+// Start server only if not in test mode
+if (process.env.NODE_ENV !== 'test' && require.main === module) {
+  const server = app.listen(config.app.port, () => {
+    logger.info(`Server running in ${config.app.env} mode on port ${config.app.port}`);
+  });
+
+  // Handle unhandled promise rejections
+  process.on('unhandledRejection', (err) => {
+    logger.error('Unhandled Promise Rejection:', err);
+    // Close server & exit process
+    server.close(() => process.exit(1));
+  });
+
+  // Handle uncaught exceptions
+  process.on('uncaughtException', (err) => {
+    logger.error('Uncaught Exception:', err);
+    // Close server & exit process
+    server.close(() => process.exit(1));
+  });
+}

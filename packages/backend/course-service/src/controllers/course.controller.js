@@ -46,6 +46,7 @@ class CourseController {
         limit = 10,
         category,
         level,
+        domain,
         search,
         priceMin,
         priceMax,
@@ -59,6 +60,7 @@ class CourseController {
 
       if (category) query.category = category;
       if (level) query.level = level;
+      if (domain) query.domain = domain;
       if (priceMin || priceMax) {
         query.price = {};
         if (priceMin) query.price.$gte = Number(priceMin);
@@ -85,7 +87,9 @@ class CourseController {
 
       res.json({
         success: true,
-        data: results,
+        data: {
+          courses: results
+        },
         pagination
       });
     } catch (error) {
@@ -177,7 +181,9 @@ class CourseController {
 
       res.json({
         success: true,
-        data: modulesWithLessons
+        data: {
+          modules: modulesWithLessons
+        }
       });
     } catch (error) {
       console.error('getCourseLessons error:', error);
@@ -349,7 +355,7 @@ class CourseController {
       }
 
       await Promise.all([
-        course.remove(),
+        Course.deleteOne({ _id: course._id }),
         Review.deleteMany({ course: course._id })
       ]);
 

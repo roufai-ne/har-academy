@@ -8,7 +8,7 @@ class PaymentController {
   async createCoursePurchase(req, res) {
     try {
       const { courseId, amount, currency = 'EUR' } = req.body;
-      const userId = req.user.id;
+      const userId = req.user.user_id;
 
       // Create transaction record
       const transaction = new Transaction({
@@ -55,7 +55,7 @@ class PaymentController {
   async createSubscription(req, res) {
     try {
       const { plan, billingCycle = 'monthly' } = req.body;
-      const userId = req.user.id;
+      const userId = req.user.user_id;
 
       // Check for existing active subscription
       const existing = await Subscription.findActiveByUser(userId);
@@ -126,7 +126,7 @@ class PaymentController {
   // Get user transactions
   async getTransactions(req, res) {
     try {
-      const userId = req.user.id;
+      const userId = req.user.user_id;
       const { page = 1, limit = 10, status } = req.query;
 
       const query = { user: userId };
@@ -160,7 +160,7 @@ class PaymentController {
   // Get user subscription
   async getSubscription(req, res) {
     try {
-      const userId = req.user.id;
+      const userId = req.user.user_id;
       const subscription = await Subscription.findOne({ user: userId }).sort({ createdAt: -1 });
 
       if (!subscription) {
@@ -186,7 +186,7 @@ class PaymentController {
   // Cancel subscription
   async cancelSubscription(req, res) {
     try {
-      const userId = req.user.id;
+      const userId = req.user.user_id;
       const { reason } = req.body;
 
       const subscription = await Subscription.findActiveByUser(userId);
@@ -220,7 +220,7 @@ class PaymentController {
       const userId = req.params.userId;
       
       // Check authorization - users can only view their own or admins can view any
-      if (req.user.id !== userId && req.user.role !== 'admin') {
+      if (req.user.user_id !== userId && req.user.role !== 'admin') {
         return res.status(403).json({
           success: false,
           error: { message: 'Unauthorized to view these entitlements' }
@@ -270,7 +270,7 @@ class PaymentController {
   async refundTransaction(req, res) {
     try {
       const { transactionId } = req.params;
-      const userId = req.user.id;
+      const userId = req.user.user_id;
       const { reason } = req.body;
 
       const transaction = await Transaction.findById(transactionId);

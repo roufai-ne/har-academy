@@ -165,6 +165,26 @@ userSchema.statics.findByEmail = function (email) {
 // Alias for generateToken (used in controller)
 userSchema.methods.generateAuthToken = userSchema.methods.generateToken;
 
+// Virtual field for preferences (for backward compatibility with tests)
+userSchema.virtual('preferences').get(function() {
+  return {
+    language: this.language,
+    ...this.notification_settings
+  };
+});
+
+// toJSON override to exclude sensitive fields
+userSchema.methods.toJSON = function () {
+  const user = this.toObject({ virtuals: true });
+  delete user.password_hash;
+  delete user.reset_password_token;
+  delete user.reset_password_expires;
+  delete user.verification_token;
+  delete user.__v;
+  delete user.id; // Remove duplicate ID from virtuals
+  return user;
+};
+
 const User = mongoose.model('User', userSchema);
 
 module.exports = User;

@@ -24,6 +24,7 @@ describe('AuthService', () => {
       const mockSavedUser = {
         _id: 'user123',
         ...mockUserData,
+        save: jest.fn().mockResolvedValue(this),
         getPublicProfile: jest.fn(() => ({ id: 'user123' })),
         generateToken: jest.fn(() => 'token123'),
         generateRefreshToken: jest.fn(() => 'refresh123'),
@@ -34,6 +35,7 @@ describe('AuthService', () => {
 
       const result = await AuthService.register(mockUserData);
 
+      expect(mockSavedUser.save).toHaveBeenCalled();
       expect(result).toEqual({
         user: { id: 'user123' },
         token: 'token123',
