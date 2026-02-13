@@ -4,6 +4,7 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const paymentRoutes = require('./routes/payment.routes');
 const logger = require('./utils/logger');
+const { apiLimiter } = require('./middleware/rateLimiter');
 
 const app = express();
 
@@ -12,12 +13,15 @@ app.use(helmet());
 app.use(cors());
 app.use(morgan('combined', { stream: { write: message => logger.info(message.trim()) } }));
 
-// Webhook route needs raw body
+// Webhook route needs raw body (before JSON parsing)
 app.use('/api/v1/payments/webhook', express.raw({ type: 'application/json' }));
 
 // Regular JSON parsing for other routes
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Rate limiting on API routes
+app.use('/api/v1/payments', apiLimiter);
 
 // Health check
 app.get('/health', (req, res) => {

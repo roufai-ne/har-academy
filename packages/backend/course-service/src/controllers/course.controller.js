@@ -1,12 +1,23 @@
 const { Course, Enrollment, Review } = require('../models');
 const { generateUniqueSlug, paginateResults, formatError } = require('../utils/helpers');
+const logger = require('../utils/logger');
+const config = require('../config');
 
 class CourseController {
   // Create a new course
   async createCourse(req, res) {
     try {
-      console.log('Create course request:', { body: req.body, user: req.user });
-      
+      const instructorId = req.user.user_id || req.user.id || req.user._id;
+
+      // Enforce max courses per instructor
+      const instructorCourseCount = await Course.countDocuments({ instructor_id: instructorId });
+      if (instructorCourseCount >= config.limits.maxCoursesPerInstructor) {
+        return res.status(400).json({
+          success: false,
+          error: { message: `Maximum of ${config.limits.maxCoursesPerInstructor} courses per instructor reached` }
+        });
+      }
+
       const { title, description, domain, level, price, status } = req.body;
       const slug = await generateUniqueSlug(Course, title);
 
@@ -14,23 +25,25 @@ class CourseController {
         title,
         description,
         domain,
-        category: domain, // For compatibility
+        category: domain,
         level,
         price,
         status: status || 'draft',
         slug,
-        instructor_id: req.user.user_id || req.user.id || req.user._id,
+        instructor_id: instructorId,
         instructor_name: `${req.user.first_name || ''} ${req.user.last_name || ''}`.trim() || 'Instructor'
       });
 
       await course.save();
+
+      logger.info(`Course created: ${course._id} by instructor ${instructorId}`);
 
       res.status(201).json({
         success: true,
         data: course
       });
     } catch (error) {
-      console.error('Error creating course:', error);
+      logger.error('Error creating course:', error);
       res.status(400).json({
         success: false,
         error: formatError(error)
@@ -54,23 +67,19 @@ class CourseController {
         sortOrder = 'desc'
       } = req.query;
 
-      console.log('getCourses query params:', req.query);
-
       const query = { status: 'published' };
 
       if (category) query.category = category;
       if (level) query.level = level;
       if (domain) query.domain = domain;
       if (priceMin || priceMax) {
-        query.price = {};
-        if (priceMin) query.price.$gte = Number(priceMin);
-        if (priceMax) query.price.$lte = Number(priceMax);
+        query['price.amount'] = {};
+        if (priceMin) query['price.amount'].$gte = Number(priceMin);
+        if (priceMax) query['price.amount'].$lte = Number(priceMax);
       }
       if (search) {
         query.$text = { $search: search };
       }
-
-      console.log('getCourses query:', query);
 
       const sort = { [sortBy]: sortOrder === 'desc' ? -1 : 1 };
 
@@ -83,8 +92,6 @@ class CourseController {
         sort
       );
 
-      console.log('getCourses results:', results.length);
-
       res.json({
         success: true,
         data: {
@@ -93,7 +100,7 @@ class CourseController {
         pagination
       });
     } catch (error) {
-      console.error('getCourses error:', error);
+      logger.error('getCourses error:', error);
       res.status(400).json({
         success: false,
         error: formatError(error)
@@ -104,26 +111,21 @@ class CourseController {
   // Get course by slug
   async getCourseBySlug(req, res) {
     try {
-      console.log('getCourseBySlug:', req.params.slug);
-      
       const course = await Course.findOne({ slug: req.params.slug });
 
       if (!course) {
-        console.log('Course not found by slug:', req.params.slug);
         return res.status(404).json({
           success: false,
           error: { message: 'Course not found' }
         });
       }
 
-      console.log('Course found:', course._id);
-
       res.json({
         success: true,
         data: course
       });
     } catch (error) {
-      console.error('getCourseBySlug error:', error);
+      logger.error('getCourseBySlug error:', error);
       res.status(400).json({
         success: false,
         error: formatError(error)
@@ -148,7 +150,7 @@ class CourseController {
         data: course
       });
     } catch (error) {
-      console.error('Error fetching course:', error);
+      logger.error('Error fetching course:', error);
       res.status(400).json({
         success: false,
         error: formatError(error)
@@ -159,25 +161,18 @@ class CourseController {
   // Get course lessons
   async getCourseLessons(req, res) {
     try {
-      console.log('getCourseLessons for course:', req.params.id);
-      
       const { Module, Lesson } = require('../models');
       const modules = await Module.find({ course_id: req.params.id }).sort('order');
-      
-      console.log('Found modules:', modules.length);
 
       const modulesWithLessons = await Promise.all(
         modules.map(async (module) => {
           const lessons = await Lesson.find({ module_id: module._id }).sort('order');
-          console.log(`Module ${module._id} has ${lessons.length} lessons`);
           return {
             ...module.toObject(),
             lessons
           };
         })
       );
-
-      console.log('Returning modules with lessons:', modulesWithLessons.length);
 
       res.json({
         success: true,
@@ -186,7 +181,7 @@ class CourseController {
         }
       });
     } catch (error) {
-      console.error('getCourseLessons error:', error);
+      logger.error('getCourseLessons error:', error);
       res.status(400).json({
         success: false,
         error: formatError(error)
@@ -222,8 +217,9 @@ class CourseController {
   // Enroll in course
   async enrollInCourse(req, res) {
     try {
+      const userId = req.user.user_id || req.user.id;
       const course = await Course.findById(req.params.id);
-      
+
       if (!course) {
         return res.status(404).json({
           success: false,
@@ -231,9 +227,16 @@ class CourseController {
         });
       }
 
+      if (course.status !== 'published') {
+        return res.status(400).json({
+          success: false,
+          error: { message: 'Course is not available for enrollment' }
+        });
+      }
+
       const existingEnrollment = await Enrollment.findOne({
         course: req.params.id,
-        student: req.user.user_id
+        student: userId
       });
 
       if (existingEnrollment) {
@@ -243,17 +246,39 @@ class CourseController {
         });
       }
 
-      const enrollment = await Enrollment.create({
+      // Enforce max enrollments per user
+      const userEnrollmentCount = await Enrollment.countDocuments({
+        student: userId,
+        status: 'active'
+      });
+      if (userEnrollmentCount >= config.limits.maxEnrollmentsPerUser) {
+        return res.status(400).json({
+          success: false,
+          error: { message: `Maximum of ${config.limits.maxEnrollmentsPerUser} active enrollments reached` }
+        });
+      }
+
+      const enrollment = new Enrollment({
         course: req.params.id,
-        student: req.user.user_id,
+        student: userId,
         enrolledAt: new Date()
       });
+
+      // Initialize progress tracking from course modules
+      await enrollment.initializeProgress(course.modules);
+      await enrollment.save();
+
+      // Update course enrollment count
+      await Course.findByIdAndUpdate(req.params.id, { $inc: { enrollments_count: 1 } });
+
+      logger.info(`User ${userId} enrolled in course ${req.params.id}`);
 
       res.status(201).json({
         success: true,
         data: enrollment
       });
     } catch (error) {
+      logger.error('enrollInCourse error:', error);
       res.status(400).json({
         success: false,
         error: formatError(error)
@@ -264,9 +289,10 @@ class CourseController {
   // Get course progress
   async getCourseProgress(req, res) {
     try {
+      const userId = req.user.user_id || req.user.id;
       const enrollment = await Enrollment.findOne({
         course: req.params.id,
-        student: req.user.user_id
+        student: userId
       });
 
       if (!enrollment) {
@@ -345,8 +371,11 @@ class CourseController {
         });
       }
 
-      // Check if there are any enrollments
-      const enrollmentCount = await Enrollment.countDocuments({ course: course._id });
+      // Check if there are any active enrollments
+      const enrollmentCount = await Enrollment.countDocuments({
+        course: course._id,
+        status: { $in: ['active', 'completed'] }
+      });
       if (enrollmentCount > 0) {
         return res.status(400).json({
           success: false,
@@ -354,10 +383,17 @@ class CourseController {
         });
       }
 
+      const { Module, Lesson } = require('../models');
+
       await Promise.all([
         Course.deleteOne({ _id: course._id }),
-        Review.deleteMany({ course: course._id })
+        Module.deleteMany({ course_id: course._id }),
+        Lesson.deleteMany({ module_id: { $in: course.modules } }),
+        Review.deleteMany({ course: course._id }),
+        Enrollment.deleteMany({ course: course._id })
       ]);
+
+      logger.info(`Course deleted: ${course._id}`);
 
       res.json({
         success: true,
@@ -374,6 +410,7 @@ class CourseController {
   // Publish course
   async publishCourse(req, res) {
     try {
+      const { Module, Lesson } = require('../models');
       const course = await Course.findById(req.params.id);
 
       if (!course) {
@@ -390,9 +427,47 @@ class CourseController {
         });
       }
 
+      if (course.status === 'published') {
+        return res.status(400).json({
+          success: false,
+          error: { message: 'Course is already published' }
+        });
+      }
+
+      // Validate course has at least one module with at least one lesson
+      const modules = await Module.find({ course_id: course._id });
+      if (modules.length === 0) {
+        return res.status(400).json({
+          success: false,
+          error: { message: 'Course must have at least one module to be published' }
+        });
+      }
+
+      const lessonCount = await Lesson.countDocuments({
+        module_id: { $in: modules.map(m => m._id) }
+      });
+      if (lessonCount === 0) {
+        return res.status(400).json({
+          success: false,
+          error: { message: 'Course must have at least one lesson to be published' }
+        });
+      }
+
+      // Update course stats
       course.status = 'published';
       course.published_at = new Date();
+      course.total_lessons = lessonCount;
+
+      // Calculate total duration
+      const lessons = await Lesson.find({
+        module_id: { $in: modules.map(m => m._id) }
+      });
+      const totalSeconds = lessons.reduce((sum, l) => sum + (l.video?.duration_seconds || 0), 0);
+      course.total_duration_hours = Math.round((totalSeconds / 3600) * 100) / 100;
+
       await course.save();
+
+      logger.info(`Course published: ${course._id}`);
 
       res.json({
         success: true,
@@ -410,6 +485,7 @@ class CourseController {
   async updateModuleOrder(req, res) {
     try {
       const { moduleIds } = req.body;
+      const { Module } = require('../models');
       const course = await Course.findById(req.params.id);
 
       if (!course) {
@@ -426,21 +502,22 @@ class CourseController {
         });
       }
 
-      // Reorder modules
-      const orderedModules = moduleIds.map((id, index) => {
-        const module = course.modules.id(id);
-        if (module) {
-          module.order = index + 1;
-        }
-        return module;
-      }).filter(Boolean);
+      // Update order for each module
+      await Promise.all(
+        moduleIds.map((id, index) =>
+          Module.findByIdAndUpdate(id, { order: index + 1 })
+        )
+      );
 
-      course.modules = orderedModules;
+      // Update modules array in course
+      course.modules = moduleIds;
       await course.save();
+
+      const updatedModules = await Module.find({ course_id: course._id }).sort('order');
 
       res.json({
         success: true,
-        data: course
+        data: { modules: updatedModules }
       });
     } catch (error) {
       res.status(400).json({
@@ -453,38 +530,31 @@ class CourseController {
   // Add module to course
   async addModule(req, res) {
     try {
-      console.log('addModule request:', { 
-        courseId: req.params.id, 
-        body: req.body, 
-        user: req.user 
-      });
-
       const { title, description, order } = req.body;
       const course = await Course.findById(req.params.id);
 
       if (!course) {
-        console.log('Course not found');
         return res.status(404).json({
           success: false,
           error: { message: 'Course not found' }
         });
       }
 
-      console.log('Course found:', {
-        id: course._id,
-        instructor_id: course.instructor_id,
-        user_id: req.user.user_id
-      });
-
       if (course.instructor_id.toString() !== req.user.user_id) {
-        console.log('Authorization failed');
         return res.status(403).json({
           success: false,
           error: { message: 'Not authorized to update this course' }
         });
       }
 
-      // Create a new Module document
+      // Enforce max modules per course
+      if (course.modules.length >= config.limits.maxModulesPerCourse) {
+        return res.status(400).json({
+          success: false,
+          error: { message: `Maximum of ${config.limits.maxModulesPerCourse} modules per course reached` }
+        });
+      }
+
       const { Module } = require('../models');
       const module = await Module.create({
         course_id: course._id,
@@ -493,18 +563,17 @@ class CourseController {
         order: order || course.modules.length + 1
       });
 
-      // Add module ID to course
       course.modules.push(module._id);
       await course.save();
 
-      console.log('Module added successfully');
+      logger.info(`Module ${module._id} added to course ${course._id}`);
 
       res.status(201).json({
         success: true,
         data: module
       });
     } catch (error) {
-      console.error('addModule error:', error);
+      logger.error('addModule error:', error);
       res.status(400).json({
         success: false,
         error: formatError(error)
@@ -515,12 +584,6 @@ class CourseController {
   // Add lesson to module
   async addLesson(req, res) {
     try {
-      console.log('addLesson request:', { 
-        courseId: req.params.id, 
-        moduleId: req.params.module_id,
-        body: req.body 
-      });
-
       const { title, description, content, type, video, order } = req.body;
       const course = await Course.findById(req.params.id);
 
@@ -538,10 +601,9 @@ class CourseController {
         });
       }
 
-      // Check if module exists
       const { Module, Lesson } = require('../models');
       const module = await Module.findById(req.params.module_id);
-      
+
       if (!module || module.course_id.toString() !== req.params.id) {
         return res.status(404).json({
           success: false,
@@ -549,10 +611,15 @@ class CourseController {
         });
       }
 
-      // Get current lessons count for order
+      // Enforce max lessons per module
       const lessonsCount = await Lesson.countDocuments({ module_id: req.params.module_id });
+      if (lessonsCount >= config.limits.maxLessonsPerModule) {
+        return res.status(400).json({
+          success: false,
+          error: { message: `Maximum of ${config.limits.maxLessonsPerModule} lessons per module reached` }
+        });
+      }
 
-      // Create lesson
       const lesson = await Lesson.create({
         module_id: req.params.module_id,
         title,
@@ -563,14 +630,14 @@ class CourseController {
         order: order || lessonsCount + 1
       });
 
-      console.log('Lesson added successfully');
+      logger.info(`Lesson ${lesson._id} added to module ${req.params.module_id}`);
 
       res.status(201).json({
         success: true,
         data: lesson
       });
     } catch (error) {
-      console.error('addLesson error:', error);
+      logger.error('addLesson error:', error);
       res.status(400).json({
         success: false,
         error: formatError(error)
@@ -581,12 +648,6 @@ class CourseController {
   // Update module
   async updateModule(req, res) {
     try {
-      console.log('updateModule request:', { 
-        courseId: req.params.id, 
-        moduleId: req.params.module_id,
-        body: req.body 
-      });
-
       const course = await Course.findById(req.params.id);
 
       if (!course) {
@@ -605,7 +666,7 @@ class CourseController {
 
       const { Module } = require('../models');
       const module = await Module.findById(req.params.module_id);
-      
+
       if (!module || module.course_id.toString() !== req.params.id) {
         return res.status(404).json({
           success: false,
@@ -613,7 +674,6 @@ class CourseController {
         });
       }
 
-      // Update module fields
       if (req.body.title) module.title = req.body.title;
       if (req.body.description !== undefined) module.description = req.body.description;
       if (req.body.order !== undefined) module.order = req.body.order;
@@ -622,14 +682,12 @@ class CourseController {
 
       await module.save();
 
-      console.log('Module updated successfully');
-
       res.json({
         success: true,
         data: module
       });
     } catch (error) {
-      console.error('updateModule error:', error);
+      logger.error('updateModule error:', error);
       res.status(400).json({
         success: false,
         error: formatError(error)
@@ -640,11 +698,6 @@ class CourseController {
   // Delete module
   async deleteModule(req, res) {
     try {
-      console.log('deleteModule request:', { 
-        courseId: req.params.id, 
-        moduleId: req.params.module_id
-      });
-
       const course = await Course.findById(req.params.id);
 
       if (!course) {
@@ -663,7 +716,7 @@ class CourseController {
 
       const { Module, Lesson } = require('../models');
       const module = await Module.findById(req.params.module_id);
-      
+
       if (!module || module.course_id.toString() !== req.params.id) {
         return res.status(404).json({
           success: false,
@@ -671,24 +724,20 @@ class CourseController {
         });
       }
 
-      // Delete all lessons in this module
       await Lesson.deleteMany({ module_id: req.params.module_id });
-
-      // Delete the module
       await Module.findByIdAndDelete(req.params.module_id);
 
-      // Remove module ID from course
       course.modules = course.modules.filter(id => id.toString() !== req.params.module_id);
       await course.save();
 
-      console.log('Module deleted successfully');
+      logger.info(`Module ${req.params.module_id} deleted from course ${req.params.id}`);
 
       res.json({
         success: true,
         message: 'Module and its lessons deleted successfully'
       });
     } catch (error) {
-      console.error('deleteModule error:', error);
+      logger.error('deleteModule error:', error);
       res.status(400).json({
         success: false,
         error: formatError(error)
@@ -699,13 +748,6 @@ class CourseController {
   // Update lesson
   async updateLesson(req, res) {
     try {
-      console.log('updateLesson request:', { 
-        courseId: req.params.id, 
-        moduleId: req.params.module_id,
-        lessonId: req.params.lesson_id,
-        body: req.body 
-      });
-
       const course = await Course.findById(req.params.id);
 
       if (!course) {
@@ -724,7 +766,7 @@ class CourseController {
 
       const { Module, Lesson } = require('../models');
       const module = await Module.findById(req.params.module_id);
-      
+
       if (!module || module.course_id.toString() !== req.params.id) {
         return res.status(404).json({
           success: false,
@@ -733,7 +775,7 @@ class CourseController {
       }
 
       const lesson = await Lesson.findById(req.params.lesson_id);
-      
+
       if (!lesson || lesson.module_id.toString() !== req.params.module_id) {
         return res.status(404).json({
           success: false,
@@ -741,7 +783,6 @@ class CourseController {
         });
       }
 
-      // Update lesson fields
       if (req.body.title) lesson.title = req.body.title;
       if (req.body.description !== undefined) lesson.description = req.body.description;
       if (req.body.content !== undefined) lesson.content = req.body.content;
@@ -750,17 +791,17 @@ class CourseController {
       if (req.body.order !== undefined) lesson.order = req.body.order;
       if (req.body.quiz_id !== undefined) lesson.quiz_id = req.body.quiz_id;
       if (req.body.resource_urls !== undefined) lesson.resource_urls = req.body.resource_urls;
+      if (req.body.is_published !== undefined) lesson.is_published = req.body.is_published;
+      if (req.body.is_free_preview !== undefined) lesson.is_free_preview = req.body.is_free_preview;
 
       await lesson.save();
-
-      console.log('Lesson updated successfully');
 
       res.json({
         success: true,
         data: lesson
       });
     } catch (error) {
-      console.error('updateLesson error:', error);
+      logger.error('updateLesson error:', error);
       res.status(400).json({
         success: false,
         error: formatError(error)
@@ -771,12 +812,6 @@ class CourseController {
   // Delete lesson
   async deleteLesson(req, res) {
     try {
-      console.log('deleteLesson request:', { 
-        courseId: req.params.id, 
-        moduleId: req.params.module_id,
-        lessonId: req.params.lesson_id
-      });
-
       const course = await Course.findById(req.params.id);
 
       if (!course) {
@@ -795,7 +830,7 @@ class CourseController {
 
       const { Module, Lesson } = require('../models');
       const module = await Module.findById(req.params.module_id);
-      
+
       if (!module || module.course_id.toString() !== req.params.id) {
         return res.status(404).json({
           success: false,
@@ -804,7 +839,7 @@ class CourseController {
       }
 
       const lesson = await Lesson.findById(req.params.lesson_id);
-      
+
       if (!lesson || lesson.module_id.toString() !== req.params.module_id) {
         return res.status(404).json({
           success: false,
@@ -812,68 +847,16 @@ class CourseController {
         });
       }
 
-      // Delete the lesson
       await Lesson.findByIdAndDelete(req.params.lesson_id);
 
-      console.log('Lesson deleted successfully');
+      logger.info(`Lesson ${req.params.lesson_id} deleted from module ${req.params.module_id}`);
 
       res.json({
         success: true,
         message: 'Lesson deleted successfully'
       });
     } catch (error) {
-      console.error('deleteLesson error:', error);
-      res.status(400).json({
-        success: false,
-        error: formatError(error)
-      });
-    }
-  }
-
-  // Update lesson
-  async updateLesson_OLD(req, res) {
-    try {
-      const course = await Course.findById(req.params.id);
-
-      if (!course) {
-        return res.status(404).json({
-          success: false,
-          error: { message: 'Course not found' }
-        });
-      }
-
-      if (course.instructor.toString() !== req.user.id) {
-        return res.status(403).json({
-          success: false,
-          error: { message: 'Not authorized to update this course' }
-        });
-      }
-
-      const module = course.modules.id(req.params.module_id);
-      if (!module) {
-        return res.status(404).json({
-          success: false,
-          error: { message: 'Module not found' }
-        });
-      }
-
-      const lesson = module.lessons.id(req.params.lesson_id);
-      if (!lesson) {
-        return res.status(404).json({
-          success: false,
-          error: { message: 'Lesson not found' }
-        });
-      }
-
-      // Update lesson fields
-      Object.assign(lesson, req.body);
-      await course.save();
-
-      res.json({
-        success: true,
-        data: course
-      });
-    } catch (error) {
+      logger.error('deleteLesson error:', error);
       res.status(400).json({
         success: false,
         error: formatError(error)
@@ -884,8 +867,9 @@ class CourseController {
   // Get instructor courses
   async getInstructorCourses(req, res) {
     try {
-      const { page = 1, limit = 10 } = req.query;
+      const { page = 1, limit = 10, status } = req.query;
       const query = { instructor_id: req.user.user_id };
+      if (status) query.status = status;
 
       const { results, pagination } = await paginateResults(
         Course,
@@ -919,7 +903,7 @@ class CourseController {
         });
       }
 
-      if (course.instructor_id.toString() !== req.user.user_id) {
+      if (course.instructor_id.toString() !== req.user.user_id && req.user.role !== 'admin') {
         return res.status(403).json({
           success: false,
           error: { message: 'Not authorized to view analytics' }
@@ -927,16 +911,24 @@ class CourseController {
       }
 
       const enrollments = await Enrollment.find({ course: course._id });
-      const reviews = await Review.find({ course: course._id });
+      const reviews = await Review.find({ course: course._id, status: 'approved' });
+
+      const activeEnrollments = enrollments.filter(e => e.status === 'active');
+      const completedEnrollments = enrollments.filter(e => e.status === 'completed');
 
       const analytics = {
         totalEnrollments: enrollments.length,
-        activeEnrollments: enrollments.filter(e => e.status === 'active').length,
-        completedEnrollments: enrollments.filter(e => e.status === 'completed').length,
-        averageProgress: enrollments.reduce((acc, curr) => acc + curr.progress, 0) / enrollments.length,
+        activeEnrollments: activeEnrollments.length,
+        completedEnrollments: completedEnrollments.length,
+        completionRate: enrollments.length > 0
+          ? Math.round((completedEnrollments.length / enrollments.length) * 100)
+          : 0,
+        averageProgress: enrollments.length > 0
+          ? Math.round(enrollments.reduce((acc, curr) => acc + curr.progress, 0) / enrollments.length)
+          : 0,
         totalReviews: reviews.length,
-        averageRating: course.averageRating,
-        revenue: enrollments.length * course.price
+        averageRating: course.average_rating || 0,
+        revenue: enrollments.filter(e => e.status !== 'refunded').length * (course.price?.amount || 0)
       };
 
       res.json({
@@ -944,6 +936,7 @@ class CourseController {
         data: analytics
       });
     } catch (error) {
+      logger.error('getCourseAnalytics error:', error);
       res.status(400).json({
         success: false,
         error: formatError(error)

@@ -4,7 +4,12 @@ const { verifyToken } = require('../middleware/auth.middleware');
 
 const router = express.Router();
 
-// All routes are protected
+// Inter-service routes (no JWT auth, uses X-Service-Auth header)
+router.post('/service/enroll', enrollmentController.serviceEnroll);
+router.delete('/service/:courseId/revoke', enrollmentController.serviceRevoke);
+router.get('/verify-access', enrollmentController.verifyAccess);
+
+// Protected routes (JWT required)
 router.use(verifyToken);
 
 router.post('/', enrollmentController.enrollInCourse);

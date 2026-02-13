@@ -62,11 +62,69 @@ const stripeService = {
     });
   }),
 
+  getSubscription: jest.fn((subscriptionId) => {
+    const now = Math.floor(Date.now() / 1000);
+    return Promise.resolve({
+      id: subscriptionId,
+      status: 'active',
+      current_period_start: now,
+      current_period_end: now + 30 * 24 * 60 * 60,
+      items: {
+        data: [{
+          id: `si_test_${Date.now()}`,
+          plan: { interval: 'month', amount: 999 }
+        }]
+      }
+    });
+  }),
+
+  updateSubscription: jest.fn((subscriptionId, itemId, newPriceId) => {
+    const now = Math.floor(Date.now() / 1000);
+    return Promise.resolve({
+      id: subscriptionId,
+      status: 'active',
+      current_period_start: now,
+      current_period_end: now + 30 * 24 * 60 * 60,
+      items: {
+        data: [{
+          id: itemId,
+          price: { id: newPriceId }
+        }]
+      }
+    });
+  }),
+
   cancelSubscription: jest.fn((subscriptionId, atPeriodEnd = true) => {
     return Promise.resolve({
       id: subscriptionId,
       status: atPeriodEnd ? 'active' : 'canceled',
       cancel_at_period_end: atPeriodEnd
+    });
+  }),
+
+  reactivateSubscription: jest.fn((subscriptionId) => {
+    return Promise.resolve({
+      id: subscriptionId,
+      status: 'active',
+      cancel_at_period_end: false
+    });
+  }),
+
+  refundPayment: jest.fn((paymentIntentId, reason) => {
+    return Promise.resolve({
+      id: `re_test_${Date.now()}`,
+      payment_intent: paymentIntentId,
+      amount: 4999,
+      status: 'succeeded',
+      reason
+    });
+  }),
+
+  getPaymentMethod: jest.fn((paymentMethodId) => {
+    return Promise.resolve({
+      id: paymentMethodId,
+      type: 'card',
+      card: { last4: '4242', brand: 'visa' }
     });
   }),
 
@@ -80,7 +138,7 @@ const stripeService = {
     });
   }),
 
-  constructEvent: jest.fn((payload, signature, webhookSecret) => {
+  constructWebhookEvent: jest.fn((payload, signature) => {
     // Return mock event
     return {
       id: `evt_test_${Date.now()}`,

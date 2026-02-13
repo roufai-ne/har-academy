@@ -97,7 +97,7 @@ const enrollmentSchema = new Schema({
   },
   paymentId: {
     type: String,
-    required: true
+    default: null
   }
 }, {
   timestamps: true
@@ -109,14 +109,13 @@ enrollmentSchema.index({ student: 1, course: 1 }, { unique: true });
 // Update progress calculation middleware
 enrollmentSchema.pre('save', function(next) {
   if (this.isModified('modulesProgress')) {
-    const totalModules = this.modulesProgress.length;
-    const totalCompletedLessons = this.modulesProgress.reduce((sum, module) => 
+    const totalCompletedLessons = this.modulesProgress.reduce((sum, module) =>
       sum + module.completedLessons, 0);
-    const totalLessons = this.modulesProgress.reduce((sum, module) => 
+    const totalLessons = this.modulesProgress.reduce((sum, module) =>
       sum + module.totalLessons, 0);
-    
-    this.progress = totalLessons > 0 ? 
-      (totalCompletedLessons / totalLessons) * 100 : 0;
+
+    this.progress = totalLessons > 0 ?
+      Math.round((totalCompletedLessons / totalLessons) * 100) : 0;
 
     // Check if course is completed
     if (this.progress === 100 && !this.completedAt) {
@@ -129,28 +128,67 @@ enrollmentSchema.pre('save', function(next) {
 
 // Method to update lesson progress
 enrollmentSchema.methods.updateLessonProgress = async function(moduleId, lessonId, completed, timeSpent) {
-  const moduleProgress = this.modulesProgress.find(mp => 
+  const moduleProgress = this.modulesProgress.find(mp =>
     mp.moduleId.toString() === moduleId.toString());
-  
+
   if (moduleProgress) {
-    const lessonProgress = moduleProgress.lessonsProgress.find(lp => 
+    let lessonProgress = moduleProgress.lessonsProgress.find(lp =>
       lp.lessonId.toString() === lessonId.toString());
-    
+
     if (lessonProgress) {
       lessonProgress.completed = completed;
-      lessonProgress.timeSpent += timeSpent;
+      lessonProgress.timeSpent += timeSpent || 0;
       lessonProgress.lastAccessedAt = new Date();
-
-      // Update completed lessons count
-      moduleProgress.completedLessons = moduleProgress.lessonsProgress.filter(
-        lp => lp.completed
-      ).length;
-
-      await this.save();
-      return true;
+    } else {
+      // Add new lesson progress entry if not found
+      moduleProgress.lessonsProgress.push({
+        lessonId,
+        completed,
+        timeSpent: timeSpent || 0,
+        lastAccessedAt: new Date()
+      });
     }
+
+    // Update completed lessons count
+    moduleProgress.completedLessons = moduleProgress.lessonsProgress.filter(
+      lp => lp.completed
+    ).length;
+
+    this.lastAccessedAt = new Date();
+    await this.save();
+    return true;
   }
   return false;
+};
+
+// Method to initialize progress from modules and lessons
+enrollmentSchema.methods.initializeProgress = async function(modules) {
+  const Module = mongoose.model('Module');
+  const Lesson = mongoose.model('Lesson');
+
+  const populatedModules = await Promise.all(
+    modules.map(async (moduleId) => {
+      const mod = await Module.findById(moduleId);
+      if (!mod) return null;
+      const lessons = await Lesson.find({ module_id: moduleId });
+      return { module: mod, lessons };
+    })
+  );
+
+  this.modulesProgress = populatedModules
+    .filter(Boolean)
+    .map(({ module, lessons }) => ({
+      moduleId: module._id,
+      lessonsProgress: lessons.map(lesson => ({
+        lessonId: lesson._id,
+        completed: false,
+        timeSpent: 0
+      })),
+      completedLessons: 0,
+      totalLessons: lessons.length
+    }));
+
+  return this;
 };
 
 const Enrollment = mongoose.model('Enrollment', enrollmentSchema);

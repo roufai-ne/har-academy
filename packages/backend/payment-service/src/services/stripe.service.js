@@ -128,6 +128,25 @@ class StripeService {
     }
   }
 
+  // Update subscription (change plan)
+  async updateSubscription(subscriptionId, itemId, newPriceId) {
+    try {
+      const subscription = await stripe.subscriptions.update(subscriptionId, {
+        items: [{
+          id: itemId,
+          price: newPriceId
+        }],
+        proration_behavior: 'create_prorations'
+      });
+
+      logger.info(`Subscription updated: ${subscriptionId} to price ${newPriceId}`);
+      return subscription;
+    } catch (error) {
+      logger.error(`Failed to update subscription ${subscriptionId}:`, error);
+      throw new Error(`Subscription update failed: ${error.message}`);
+    }
+  }
+
   // Reactivate subscription
   async reactivateSubscription(subscriptionId) {
     try {
