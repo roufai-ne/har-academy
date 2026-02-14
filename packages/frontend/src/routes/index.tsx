@@ -10,6 +10,7 @@ import { DashboardLayout } from '@/components/layouts/DashboardLayout'
 import { LandingPage } from '@/pages/Landing'
 import { LoginPage } from '@/pages/auth/Login'
 import { SignupPage } from '@/pages/auth/Signup'
+import { ForgotPasswordPage } from '@/pages/auth/ForgotPassword'
 import { CoursesPage } from '@/pages/Courses'
 import { CourseDetailPage } from '@/pages/CourseDetail'
 
@@ -17,6 +18,8 @@ import { CourseDetailPage } from '@/pages/CourseDetail'
 import { DashboardPage } from '@/pages/Dashboard'
 import { ProfilePage } from '@/pages/Profile'
 import { LearningSpacePage } from '@/pages/LearningSpace'
+import { CheckoutPage } from '@/pages/Checkout'
+import { TransactionsPage } from '@/pages/Transactions'
 
 // Instructor Pages
 import { InstructorDashboard } from '@/pages/instructor/Dashboard'
@@ -63,6 +66,7 @@ export function AppRoutes() {
       <Route element={<AuthLayout />}>
         <Route path="/auth/login" element={<LoginPage />} />
         <Route path="/auth/signup" element={<SignupPage />} />
+        <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
       </Route>
 
       {/* Protected Routes */}
@@ -76,6 +80,8 @@ export function AppRoutes() {
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/learn/:courseId" element={<LearningSpacePage />} />
+        <Route path="/checkout" element={<CheckoutPage />} />
+        <Route path="/transactions" element={<TransactionsPage />} />
       </Route>
 
       {/* Instructor Routes */}

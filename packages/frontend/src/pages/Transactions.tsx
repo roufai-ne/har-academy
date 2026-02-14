@@ -209,7 +209,7 @@ export function TransactionsPage() {
                     <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
                       <span className="flex items-center">
                         <Calendar className="w-4 h-4 mr-1" />
-                        {formatDate(transaction.createdAt)}
+                        {formatDate(transaction.created_at)}
                       </span>
                       {transaction.paymentMethod && (
                         <span className="flex items-center">

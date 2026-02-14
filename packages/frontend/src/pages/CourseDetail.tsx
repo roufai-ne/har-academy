@@ -1,31 +1,41 @@
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Clock, Users, Star, CheckCircle, PlayCircle, FileText, Award } from 'lucide-react'
 
-// Mock data removed
-
 import { useQuery } from '@tanstack/react-query'
 import { courseService } from '@/services/courseService'
+import { useAuthStore } from '@/store/authStore'
 import { Loader2 } from 'lucide-react'
+import type { Course } from '@/types'
 
 export function CourseDetailPage() {
-    const { id: slug } = useParams()
+    const { id } = useParams()
+    const navigate = useNavigate()
+    const { isAuthenticated } = useAuthStore()
 
     const { data: courseData, isLoading: isLoadingCourse } = useQuery({
-        queryKey: ['course', slug],
-        queryFn: () => courseService.getCourseBySlug(slug!)
+        queryKey: ['course', id],
+        queryFn: () => courseService.getCourseById(id!)
     })
 
-    const course = courseData?.data
+    const course: Course | undefined = courseData?.data
 
-    const { data: lessonsData, isLoading: isLoadingLessons } = useQuery({
-        queryKey: ['courseLessons', course?._id],
-        queryFn: () => courseService.getCourseLessons(course._id),
-        enabled: !!course?._id
+    const { data: lessonsData } = useQuery({
+        queryKey: ['courseLessons', id],
+        queryFn: () => courseService.getCourseLessons(id!),
+        enabled: !!id
     })
 
     const curriculum = lessonsData?.data?.modules || []
+
+    const handleEnroll = async () => {
+        if (!isAuthenticated) {
+            navigate('/auth/login')
+            return
+        }
+        navigate(`/checkout?courseId=${id}`)
+    }
 
     if (isLoadingCourse) {
         return (
@@ -54,31 +64,29 @@ export function CourseDetailPage() {
                     <div className="flex flex-col md:flex-row gap-8">
                         <div className="flex-1 space-y-4">
                             <div className="flex items-center gap-2 text-sm text-gray-300">
-                                <span className="text-primary font-bold">DATA SCIENCE</span>
-                                <span>&gt;</span>
-                                <span>Python</span>
+                                <span className="text-primary font-bold uppercase">{course.category || course.domain}</span>
                             </div>
                             <h1 className="text-3xl md:text-4xl font-bold">{course.title}</h1>
                             <p className="text-lg text-gray-300 max-w-2xl">{course.description}</p>
 
                             <div className="flex flex-wrap items-center gap-4 text-sm pt-4">
                                 <div className="flex items-center gap-1 text-yellow-400">
-                                    <span className="font-bold text-lg">{course.rating}</span>
+                                    <span className="font-bold text-lg">{course.average_rating?.toFixed(1) || '0.0'}</span>
                                     <div className="flex">
                                         {[1, 2, 3, 4, 5].map((star) => (
-                                            <Star key={star} className={`w-4 h-4 ${star <= Math.round(course.rating) ? 'fill-current' : 'text-gray-600'}`} />
+                                            <Star key={star} className={`w-4 h-4 ${star <= Math.round(course.average_rating || 0) ? 'fill-current' : 'text-gray-600'}`} />
                                         ))}
                                     </div>
-                                    <span className="text-gray-400 ml-1">({course.reviews} avis)</span>
+                                    <span className="text-gray-400 ml-1">({course.reviews_count || 0} avis)</span>
                                 </div>
                                 <div className="flex items-center gap-1">
-                                    <Users className="w-4 h-4" /> {course.students} apprenants
+                                    <Users className="w-4 h-4" /> {course.enrollments_count || 0} apprenants
                                 </div>
                                 <div className="flex items-center gap-1">
-                                    <Clock className="w-4 h-4" /> {course.duration}
+                                    <Clock className="w-4 h-4" /> {course.total_duration_hours || 0}h
                                 </div>
                                 <div className="text-gray-300">
-                                    Mis à jour : {new Date(course.updatedAt).toLocaleDateString()}
+                                    Mis à jour : {new Date(course.updated_at).toLocaleDateString('fr-FR')}
                                 </div>
                             </div>
                         </div>
@@ -93,27 +101,29 @@ export function CourseDetailPage() {
                     <div className="flex-1 space-y-8">
 
                         {/* What you will learn */}
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Ce que vous apprendrez</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                    {course.keywords?.map((item: string, index: number) => (
-                                        <div key={index} className="flex items-start gap-2">
-                                            <CheckCircle className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
-                                            <span className="text-sm">{item}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </CardContent>
-                        </Card>
+                        {course.keywords && course.keywords.length > 0 && (
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Ce que vous apprendrez</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        {course.keywords.map((item: string, index: number) => (
+                                            <div key={index} className="flex items-start gap-2">
+                                                <CheckCircle className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
+                                                <span className="text-sm">{item}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )}
 
                         {/* Curriculum */}
                         <Card>
                             <CardHeader>
                                 <CardTitle>Contenu du cours</CardTitle>
-                                <CardDescription>{curriculum.length} sections • {course.total_lessons} leçons</CardDescription>
+                                <CardDescription>{curriculum.length} sections {course.total_lessons ? `• ${course.total_lessons} leçons` : ''}</CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-4">
                                 {curriculum.map((section: any, idx: number) => (
@@ -127,7 +137,9 @@ export function CourseDetailPage() {
                                                 <div key={lIdx} className="p-3 pl-6 flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
                                                     {lesson.type === 'video' ? <PlayCircle className="w-4 h-4 text-gray-400" /> : <FileText className="w-4 h-4 text-gray-400" />}
                                                     <span className="text-sm">{lesson.title}</span>
-                                                    <span className="text-xs text-gray-400 ml-auto">{lesson.duration_seconds ? Math.round(lesson.duration_seconds / 60) + 'm' : ''}</span>
+                                                    <span className="text-xs text-gray-400 ml-auto">
+                                                        {lesson.video?.duration_seconds ? Math.round(lesson.video.duration_seconds / 60) + 'm' : ''}
+                                                    </span>
                                                 </div>
                                             ))}
                                         </div>
@@ -143,11 +155,10 @@ export function CourseDetailPage() {
                             </CardHeader>
                             <CardContent>
                                 <div className="flex flex-col sm:flex-row gap-4">
-                                    <img src={course.instructor?.avatar || "https://github.com/shadcn.png"} alt={course.instructor?.name} className="w-24 h-24 rounded-full object-cover" />
+                                    <img src="https://github.com/shadcn.png" alt={course.instructor_name} className="w-24 h-24 rounded-full object-cover" />
                                     <div className="space-y-2">
-                                        <h3 className="font-bold text-lg">{course.instructor?.name || course.instructor_name}</h3>
-                                        <div className="text-primary text-sm">{course.instructor?.role || 'Instructor'}</div>
-                                        <p className="text-sm text-gray-600">{course.instructor?.bio || ''}</p>
+                                        <h3 className="font-bold text-lg">{course.instructor_name || 'Instructeur'}</h3>
+                                        <div className="text-primary text-sm">Instructeur</div>
                                     </div>
                                 </div>
                             </CardContent>
@@ -169,15 +180,17 @@ export function CourseDetailPage() {
                                     </div>
                                 </div>
                                 <CardContent className="p-6 space-y-6">
-                                    <div className="text-3xl font-bold text-center">{(course.price?.amount || course.price).toLocaleString()} FCFA</div>
-                                    <Button className="w-full text-lg py-6" size="lg">Ajouter au panier</Button>
-                                    <Button variant="outline" className="w-full">Acheter maintenant</Button>
+                                    <div className="text-3xl font-bold text-center">
+                                        {course.price?.amount?.toLocaleString() || 0} {course.price?.currency || 'FCFA'}
+                                    </div>
+                                    <Button className="w-full text-lg py-6" size="lg" onClick={handleEnroll}>
+                                        S'inscrire maintenant
+                                    </Button>
 
                                     <div className="space-y-3 text-sm text-gray-600 pt-4 border-t">
                                         <div className="font-medium text-gray-900 mb-2">Ce cours inclut :</div>
-                                        <div className="flex items-center gap-2"><PlayCircle className="w-4 h-4" /> 12.5 heures de vidéo</div>
-                                        <div className="flex items-center gap-2"><FileText className="w-4 h-4" /> 5 articles</div>
-                                        <div className="flex items-center gap-2"><FileText className="w-4 h-4" /> 15 ressources téléchargeables</div>
+                                        <div className="flex items-center gap-2"><PlayCircle className="w-4 h-4" /> {course.total_duration_hours || 0} heures de vidéo</div>
+                                        <div className="flex items-center gap-2"><FileText className="w-4 h-4" /> {course.total_lessons || 0} leçons</div>
                                         <div className="flex items-center gap-2"><Award className="w-4 h-4" /> Certificat de fin de formation</div>
                                         <div className="flex items-center gap-2"><CheckCircle className="w-4 h-4" /> Accès illimité</div>
                                     </div>

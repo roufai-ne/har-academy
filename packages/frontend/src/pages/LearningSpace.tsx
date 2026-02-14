@@ -1,9 +1,43 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { CheckCircle, PlayCircle, FileText, ChevronLeft, Menu, X, Loader2 } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { courseService } from '@/services/courseService'
+import DOMPurify from 'dompurify'
+import videojs from 'video.js'
+import Player from 'video.js/dist/types/player'
+import 'video.js/dist/video-js.css'
+
+function VideoPlayer({ src, poster }: { src: string; poster?: string }) {
+    const videoRef = useRef<HTMLDivElement>(null)
+    const playerRef = useRef<Player | null>(null)
+
+    useEffect(() => {
+        if (!videoRef.current) return
+
+        const videoElement = document.createElement('video-js')
+        videoElement.classList.add('vjs-big-play-centered', 'vjs-fluid')
+        videoRef.current.appendChild(videoElement)
+
+        playerRef.current = videojs(videoElement, {
+            controls: true,
+            responsive: true,
+            fluid: true,
+            poster,
+            sources: src ? [{ src, type: 'video/mp4' }] : [],
+        })
+
+        return () => {
+            if (playerRef.current) {
+                playerRef.current.dispose()
+                playerRef.current = null
+            }
+        }
+    }, [src, poster])
+
+    return <div ref={videoRef} data-vjs-player />
+}
 
 export function LearningSpacePage() {
     const { courseId } = useParams()
@@ -33,7 +67,6 @@ export function LearningSpacePage() {
     // Set initial active lesson
     useEffect(() => {
         if (modules.length > 0 && !activeLesson) {
-            // Try to find the first incomplete lesson or just the first lesson
             const firstLesson = modules[0]?.lessons?.[0]
             if (firstLesson) {
                 setActiveLesson(firstLesson)
@@ -62,6 +95,18 @@ export function LearningSpacePage() {
             if (lessonProg?.completed) return true
         }
         return false
+    }
+
+    const sanitizeHtml = (html: string) => {
+        return DOMPurify.sanitize(html, {
+            ALLOWED_TAGS: [
+                'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'hr',
+                'ul', 'ol', 'li', 'a', 'strong', 'em', 'b', 'i', 'u',
+                'code', 'pre', 'blockquote', 'img', 'table', 'thead',
+                'tbody', 'tr', 'th', 'td', 'span', 'div', 'sub', 'sup',
+            ],
+            ALLOWED_ATTR: ['href', 'target', 'rel', 'src', 'alt', 'class', 'title', 'width', 'height'],
+        })
     }
 
     if (isLoadingLessons || isLoadingProgress) {
@@ -164,19 +209,13 @@ export function LearningSpacePage() {
 
                 <div className="flex-1 overflow-y-auto p-4 md:p-8">
                     <div className="max-w-4xl mx-auto space-y-6">
-                        {/* Video Player Placeholder */}
-                        <div className="aspect-video bg-black rounded-lg shadow-lg flex items-center justify-center relative overflow-hidden group">
+                        {/* Video Player / Content Display */}
+                        <div className="aspect-video bg-black rounded-lg shadow-lg overflow-hidden">
                             {activeLesson.type === 'video' ? (
-                                <>
-                                    <img
-                                        src="https://images.unsplash.com/photo-1587620962725-abab7fe55159?w=1200&auto=format&fit=crop&q=60"
-                                        alt="Video thumbnail"
-                                        className="w-full h-full object-cover opacity-60"
-                                    />
-                                    <div className="absolute inset-0 flex items-center justify-center">
-                                        <PlayCircle className="w-20 h-20 text-white opacity-80 group-hover:opacity-100 transition-opacity cursor-pointer" />
-                                    </div>
-                                </>
+                                <VideoPlayer
+                                    src={activeLesson.video?.url || ''}
+                                    poster={activeLesson.video?.thumbnail || course.image_url}
+                                />
                             ) : (
                                 <div className="bg-white dark:bg-gray-800 w-full h-full flex flex-col items-center justify-center p-8 text-center">
                                     <FileText className="w-16 h-16 text-gray-300 mb-4" />
@@ -208,7 +247,9 @@ export function LearningSpacePage() {
                         <div className="prose dark:prose-invert max-w-none">
                             <h3>À propos de cette leçon</h3>
                             <p>{activeLesson.description}</p>
-                            <div dangerouslySetInnerHTML={{ __html: activeLesson.content || '' }} />
+                            {activeLesson.content && (
+                                <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(activeLesson.content) }} />
+                            )}
                         </div>
                     </div>
                 </div>

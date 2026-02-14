@@ -9,7 +9,11 @@ export interface User {
   status: 'active' | 'suspended' | 'deleted'
   language: string
   created_at: string
+  updated_at: string
+  last_login_at?: string
+  is_verified: boolean
   instructor_info?: InstructorInfo
+  notification_settings?: NotificationSettings
 }
 
 export interface InstructorInfo {
@@ -18,6 +22,12 @@ export interface InstructorInfo {
   total_courses: number
   rating: number
   verification_status: 'unverified' | 'verified' | 'rejected'
+}
+
+export interface NotificationSettings {
+  email_notifications: boolean
+  marketing_emails: boolean
+  newsletter: boolean
 }
 
 // Auth Types
@@ -40,7 +50,7 @@ export interface AuthResponse {
   data: {
     user: User
     token: string
-    refresh_token?: string
+    refreshToken?: string
   }
 }
 
@@ -49,16 +59,16 @@ export interface Course {
   _id: string
   title: string
   description: string
-  short_description: string
-  domain: 'Excel' | 'R' | 'Python' | 'Other'
-  stack: string[]
+  short_description?: string
+  domain: string
+  stack?: string[]
   price: {
     amount: number
     currency: string
     pricing_model: 'one-time' | 'subscription'
   }
   instructor_id: string
-  instructor_name: string
+  instructor_name?: string
   status: 'draft' | 'published' | 'archived'
   modules: string[]
   total_lessons: number
@@ -66,10 +76,10 @@ export interface Course {
   enrollments_count: number
   average_rating: number
   reviews_count: number
-  keywords: string[]
-  image_url: string
-  category: string
-  language: string
+  keywords?: string[]
+  image_url?: string
+  category?: string
+  language?: string
   created_at: string
   updated_at: string
   published_at?: string
@@ -79,9 +89,9 @@ export interface Module {
   _id: string
   course_id: string
   title: string
-  description: string
+  description?: string
   order: number
-  lessons: string[]
+  lessons: Lesson[] | string[]
   created_at: string
 }
 
@@ -90,32 +100,98 @@ export interface Lesson {
   module_id: string
   course_id: string
   title: string
-  description: string
+  description?: string
   type: 'video' | 'text' | 'quiz' | 'exercise'
   order: number
   video?: {
     url: string
     duration_seconds: number
-    transcript: string
-    thumbnail_url: string
+    transcript?: string
+    thumbnail_url?: string
   }
   content?: string
   quiz_id?: string
+  duration_seconds?: number
   created_at: string
   updated_at: string
+}
+
+export interface LessonProgress {
+  lessonId: string
+  completed: boolean
+  timeSpent: number
+}
+
+export interface ModuleProgress {
+  moduleId: string
+  lessonsProgress: LessonProgress[]
+  completedLessons: number
+  totalLessons: number
 }
 
 export interface Enrollment {
   _id: string
   user_id: string
-  course_id: string
-  status: 'active' | 'completed' | 'dropped'
+  course_id: string | Course
+  course?: Course
+  status: 'active' | 'completed' | 'dropped' | 'refunded'
   progress_percentage: number
-  completed_lessons: string[]
-  last_accessed_lesson_id: string
+  modulesProgress?: ModuleProgress[]
   enrolled_at: string
   completed_at?: string
-  last_accessed_at: string
+  last_accessed_at?: string
+  certificate_id?: string
+}
+
+// Review Types
+export interface Review {
+  _id: string
+  user_id: string
+  course_id: string
+  rating: number
+  comment: string
+  status: 'pending' | 'approved' | 'rejected'
+  created_at: string
+  updated_at: string
+  user?: {
+    first_name: string
+    last_name: string
+    avatar_url?: string
+  }
+}
+
+// Transaction Types
+export interface Transaction {
+  _id: string
+  user_id: string
+  course_id?: string
+  type: 'course_purchase' | 'subscription' | 'refund'
+  amount: number
+  currency: string
+  status: 'pending' | 'processing' | 'completed' | 'failed' | 'refunded'
+  paymentMethod?: {
+    type: string
+    last4: string
+    brand: string
+  }
+  created_at: string
+  completed_at?: string
+  course?: Course
+}
+
+export interface Subscription {
+  _id: string
+  user_id: string
+  plan: 'basic' | 'pro' | 'enterprise'
+  status: 'active' | 'past_due' | 'cancelled' | 'expired' | 'trialing'
+  billingCycle: 'monthly' | 'yearly'
+  price: number
+  currency: string
+  currentPeriodStart: string
+  currentPeriodEnd: string
+  cancelAtPeriodEnd?: boolean
+  cancelledAt?: string
+  autoRenew: boolean
 }
 
 // API Response Types

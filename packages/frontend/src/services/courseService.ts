@@ -1,49 +1,12 @@
 import api from '@/lib/axios'
+import type { Course, Enrollment, CourseFilters } from '@/types'
 
-export interface Course {
-  _id: string
-  title: string
-  slug: string
-  description: string
-  price: number
-  level: 'beginner' | 'intermediate' | 'advanced'
-  category: string
-  thumbnail: string
-  instructor: {
-    _id: string
-    firstName: string
-    lastName: string
-  }
-  rating: number
-  totalStudents: number
-  duration: number
-  lessonsCount: number
-  isPublished: boolean
-  createdAt: string
-  updatedAt: string
-}
-
-export interface Enrollment {
-  _id: string
-  user: string
-  course: Course
-  progress: number
-  completedLessons: string[]
-  isCompleted: boolean
-  enrolledAt: string
-  lastAccessedAt: string
-}
+export type { Course, Enrollment }
 
 export const courseService = {
   // Get all courses with optional filters
-  getAllCourses: async (params?: any) => {
+  getAllCourses: async (params?: CourseFilters) => {
     const response = await api.get('/courses', { params })
-    return response.data
-  },
-
-  // Get course by slug
-  getCourseBySlug: async (slug: string) => {
-    const response = await api.get(`/courses/slug/${slug}`)
     return response.data
   },
 
@@ -80,6 +43,18 @@ export const courseService = {
   // Get course progress
   getCourseProgress: async (courseId: string) => {
     const response = await api.get(`/courses/${courseId}/progress`)
+    return response.data
+  },
+
+  // Get course reviews
+  getCourseReviews: async (courseId: string) => {
+    const response = await api.get(`/courses/${courseId}/reviews`)
+    return response.data
+  },
+
+  // Add review
+  addReview: async (courseId: string, data: { rating: number; comment: string }) => {
+    const response = await api.post(`/courses/${courseId}/reviews`, data)
     return response.data
   },
 
