@@ -68,9 +68,13 @@ router.post('/reset-password', validate(resetPasswordSchema), authController.res
 router.post('/refresh-token', validate(refreshTokenSchema), authController.refreshToken);
 router.get('/verify-jwt', authController.verifyJWT);
 
+// Public profile
+router.get('/users/:id', authController.getPublicProfile);
+
 // Protected routes
 router.get('/me', authenticate, authController.getMe);
 router.put('/profile', authenticate, validate(updateProfileSchema), authController.updateProfile);
 router.post('/change-password', authenticate, validate(changePasswordSchema), authController.changePassword);
+router.post('/logout', authenticate, authController.logout);
 
 module.exports = router;

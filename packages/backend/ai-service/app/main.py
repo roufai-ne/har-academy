@@ -1,17 +1,12 @@
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic_settings import BaseSettings
+from app.config import settings
+from app.services.vector_db_service import vector_db_service
 import uvicorn
+import logging
 
-class Settings(BaseSettings):
-    app_name: str = "HAR Academy AI Service"
-    debug: bool = True
-    openai_api_key: str = ""
-    
-    class Config:
-        env_file = ".env"
-
-settings = Settings()
+logging.basicConfig(level=getattr(logging, settings.log_level.upper(), logging.INFO))
+logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title=settings.app_name,
@@ -22,7 +17,7 @@ app = FastAPI(
 # CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=settings.cors_origins_list,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -38,10 +33,12 @@ app.include_router(analytics.router, prefix="/api/v1/analytics", tags=["analytic
 
 @app.get("/health")
 def health_check():
+    vector_stats = vector_db_service.get_collection_stats()
     return {
         "status": "ok",
         "service": "ai-service",
-        "version": "1.0.0"
+        "version": "1.0.0",
+        "vectorDb": vector_stats
     }
 
 @app.get("/")
@@ -52,5 +49,26 @@ def root():
         "health": "/health"
     }
 
+@app.post("/api/v1/vector-db/ingest/{course_id}")
+async def ingest_course(course_id: str):
+    """Ingest course content into vector DB for RAG chatbot."""
+    success = await vector_db_service.ingest_course(course_id)
+    if not success:
+        raise HTTPException(status_code=400, detail="Failed to ingest course content")
+    return {"success": True, "message": f"Course {course_id} ingested successfully"}
+
+@app.delete("/api/v1/vector-db/{course_id}")
+async def remove_course_vectors(course_id: str):
+    """Remove course content from vector DB."""
+    success = vector_db_service.delete_course(course_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Course not found in vector DB")
+    return {"success": True, "message": f"Course {course_id} removed from vector DB"}
+
+@app.get("/api/v1/vector-db/stats")
+def vector_db_stats():
+    """Get vector database statistics."""
+    return vector_db_service.get_collection_stats()
+
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=5000, reload=settings.debug)
+    uvicorn.run("app.main:app", host="0.0.0.0", port=settings.ai_service_port, reload=settings.debug)

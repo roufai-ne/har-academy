@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const config = require('../config');
 const logger = require('../utils/logger');
+const redisClient = require('../utils/redis-client');
 
 class AuthController {
   // Register new user
@@ -364,7 +365,7 @@ class AuthController {
       }
 
       const decoded = jwt.verify(token, config.jwt.secret);
-      const user = await User.findById(decoded.id);
+      const user = await User.findById(decoded.user_id);
 
       if (!user || user.status !== 'active') {
         return res.status(401).json({
@@ -375,7 +376,7 @@ class AuthController {
 
       res.json({
         success: true,
-        data: { 
+        data: {
           valid: true,
           user: {
             id: user._id,
@@ -393,6 +394,71 @@ class AuthController {
     }
   }
 
+  // Logout - blacklist token in Redis
+  async logout(req, res) {
+    try {
+      const token = req.headers.authorization?.replace('Bearer ', '');
+
+      if (token) {
+        // Decode to get expiry for TTL
+        const decoded = jwt.decode(token);
+        if (decoded && decoded.exp) {
+          const ttl = decoded.exp - Math.floor(Date.now() / 1000);
+          if (ttl > 0) {
+            await redisClient.set(`blacklist:${token}`, { blacklisted: true }, ttl);
+          }
+        }
+      }
+
+      logger.info(`User logged out: ${req.user.user_id}`);
+
+      res.json({
+        success: true,
+        message: 'Logged out successfully'
+      });
+    } catch (error) {
+      logger.error('Logout failed:', error);
+      res.status(400).json({
+        success: false,
+        error: { message: error.message }
+      });
+    }
+  }
+
+  // Get public profile by user ID
+  async getPublicProfile(req, res) {
+    try {
+      const user = await User.findById(req.params.id);
+
+      if (!user || user.status !== 'active') {
+        return res.status(404).json({
+          success: false,
+          error: { message: 'User not found' }
+        });
+      }
+
+      res.json({
+        success: true,
+        data: {
+          user: {
+            _id: user._id,
+            first_name: user.first_name,
+            last_name: user.last_name,
+            avatar_url: user.avatar_url,
+            role: user.role,
+            instructor_info: user.role === 'instructor' ? user.instructor_info : undefined
+          }
+        }
+      });
+    } catch (error) {
+      logger.error('Failed to fetch public profile:', error);
+      res.status(400).json({
+        success: false,
+        error: { message: error.message }
+      });
+    }
+  }
+
   // Refresh token
   async refreshToken(req, res) {
     try {
@@ -406,7 +472,7 @@ class AuthController {
       }
 
       const decoded = jwt.verify(refreshToken, config.jwt.refreshSecret);
-      const user = await User.findById(decoded.id);
+      const user = await User.findById(decoded.user_id);
 
       if (!user || user.status !== 'active') {
         return res.status(401).json({

@@ -2,10 +2,12 @@ const jwt = require('jsonwebtoken');
 const axios = require('axios');
 const config = require('../config');
 
-// JWT verification middleware
+const JWT_SECRET = process.env.JWT_SECRET || 'your-jwt-secret';
+
+// JWT verification middleware — local verify first, remote fallback
 const verifyToken = async (req, res, next) => {
   try {
-    const token = req.headers.authorization?.split(' ')[1]; // Bearer <token>
+    const token = req.headers.authorization?.split(' ')[1];
 
     if (!token) {
       return res.status(401).json({
@@ -14,27 +16,34 @@ const verifyToken = async (req, res, next) => {
       });
     }
 
-    // Verify token with auth service
+    // Try local JWT verification first (faster, no network call)
     try {
-      const response = await axios.get(`${config.services.authService}/api/v1/auth/verify`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const decoded = jwt.verify(token, JWT_SECRET);
+      req.user = {
+        id: decoded.user_id,
+        email: decoded.email,
+        role: decoded.role
+      };
+      return next();
+    } catch (localErr) {
+      // If local verification fails, try remote auth service
+      try {
+        const response = await axios.get(
+          `${config.services.authService}/api/v1/auth/verify-jwt`,
+          { headers: { 'Authorization': `Bearer ${token}` }, timeout: 3000 }
+        );
 
-      if (response.data.success) {
-        req.user = response.data.data.user;
-        next();
-      } else {
-        return res.status(401).json({
-          success: false,
-          error: { message: 'Invalid token' }
-        });
+        if (response.data.success) {
+          req.user = response.data.data.user;
+          return next();
+        }
+      } catch (remoteErr) {
+        // Both local and remote failed
       }
-    } catch (error) {
+
       return res.status(401).json({
         success: false,
-        error: { message: 'Token verification failed' }
+        error: { message: 'Invalid or expired token' }
       });
     }
   } catch (error) {
@@ -75,15 +84,12 @@ const optionalAuth = async (req, res, next) => {
   }
 
   try {
-    const response = await axios.get(`${config.services.authService}/api/v1/auth/verify`, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
-
-    if (response.data.success) {
-      req.user = response.data.data.user;
-    }
+    const decoded = jwt.verify(token, JWT_SECRET);
+    req.user = {
+      id: decoded.user_id,
+      email: decoded.email,
+      role: decoded.role
+    };
   } catch (error) {
     // Silently fail for optional auth
   }

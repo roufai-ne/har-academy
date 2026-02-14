@@ -1,11 +1,12 @@
 const jwt = require('jsonwebtoken');
 const { User } = require('../models');
 const config = require('../config');
+const redisClient = require('../utils/redis-client');
 
 const authenticate = async (req, res, next) => {
   try {
     const token = req.headers.authorization?.split(' ')[1];
-    
+
     if (!token) {
       return res.status(401).json({
         success: false,
@@ -13,8 +14,17 @@ const authenticate = async (req, res, next) => {
       });
     }
 
+    // Check if token is blacklisted (logout)
+    const isBlacklisted = await redisClient.exists(`blacklist:${token}`);
+    if (isBlacklisted) {
+      return res.status(401).json({
+        success: false,
+        error: { message: 'Token has been revoked' }
+      });
+    }
+
     const decoded = jwt.verify(token, config.jwt.secret);
-    
+
     // Verify user still exists and is active
     const user = await User.findById(decoded.user_id);
     if (!user || user.status !== 'active') {

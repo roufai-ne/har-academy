@@ -1,5 +1,7 @@
+const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 const { CustomError } = require('../utils/errors');
+const config = require('../config');
 const logger = require('../utils/logger');
 
 class AuthService {
@@ -69,7 +71,7 @@ class AuthService {
 
   static async verifyToken(token) {
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const decoded = jwt.verify(token, config.jwt.secret);
       const user = await User.findById(decoded.user_id);
 
       if (!user || user.status !== 'active') {
@@ -87,7 +89,7 @@ class AuthService {
 
   static async refreshToken(refreshToken) {
     try {
-      const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+      const decoded = jwt.verify(refreshToken, config.jwt.refreshSecret);
       const user = await User.findById(decoded.user_id);
 
       if (!user || user.status !== 'active') {

@@ -28,24 +28,18 @@ app.use(cors(config.cors));
 app.use(morgan('combined', { stream: { write: msg => logger.info(msg.trim()) } }));
 app.use(express.json());
 
-// Log all incoming requests
-app.use((req, res, next) => {
-  console.log(`[Gateway] ${req.method} ${req.url} - Body:`, req.body);
-  next();
-});
-
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-  message: 'Too many requests from this IP'
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: { success: false, error: { message: 'Too many requests from this IP' } }
 });
 app.use(limiter);
 
 // Health check
 app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'ok', 
+  res.json({
+    status: 'ok',
     service: 'api-gateway',
     uptime: process.uptime()
   });
@@ -65,6 +59,14 @@ const services = {
     target: config.services.courseService,
     pathRewrite: { '^/api/v1/enrollments': '/api/v1/enrollments' }
   },
+  categories: {
+    target: config.services.courseService,
+    pathRewrite: { '^/api/v1/categories': '/api/v1/categories' }
+  },
+  reviews: {
+    target: config.services.courseService,
+    pathRewrite: { '^/api/v1/reviews': '/api/v1/reviews' }
+  },
   payments: {
     target: config.services.paymentService,
     pathRewrite: { '^/api/v1/payments': '/api/v1/payments' }
@@ -77,33 +79,27 @@ const services = {
 
 // Create proxies
 Object.entries(services).forEach(([name, serviceConfig]) => {
-  console.log(`Setting up proxy for /api/v1/${name} -> ${serviceConfig.target}`);
+  logger.info(`Setting up proxy for /api/v1/${name} -> ${serviceConfig.target}`);
   app.use(
     `/api/v1/${name}`,
     createProxyMiddleware({
       target: serviceConfig.target,
       changeOrigin: true,
       pathRewrite: serviceConfig.pathRewrite,
-      logLevel: 'debug',
-      onProxyReq: (proxyReq, req, res) => {
-        console.log(`[Proxy] ${req.method} ${req.url} -> ${serviceConfig.target}${proxyReq.path}`);
-        
+      logLevel: 'warn',
+      onProxyReq: (proxyReq, req) => {
         // Re-stream the body if it exists
-        if (req.body) {
+        if (req.body && Object.keys(req.body).length > 0) {
           const bodyData = JSON.stringify(req.body);
           proxyReq.setHeader('Content-Type', 'application/json');
           proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
           proxyReq.write(bodyData);
         }
-        
+
         logger.info(`Proxying ${req.method} ${req.path} to ${name} service`);
       },
-      onProxyRes: (proxyRes, req, res) => {
-        console.log(`[Proxy Response] Status: ${proxyRes.statusCode}`);
-      },
       onError: (err, req, res) => {
-        console.log(`[Proxy Error] ${err.message}`);
-        logger.error(`Proxy error for ${name} service:`, err);
+        logger.error(`Proxy error for ${name} service: ${err.message}`);
         res.status(502).json({
           success: false,
           error: { message: `Service ${name} unavailable` }
