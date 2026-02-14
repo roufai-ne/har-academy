@@ -3,9 +3,18 @@ import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { CheckCircle, Star, Clock, Users, Award, BookOpen } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
+import { courseService } from '@/services/courseService'
 
 export function LandingPage() {
   const { t } = useTranslation()
+
+  const { data: coursesData } = useQuery({
+    queryKey: ['featuredCourses'],
+    queryFn: () => courseService.getAllCourses({ limit: 3, sort_by: 'popular' }),
+  })
+
+  const featuredCourses = coursesData?.data || []
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -29,7 +38,6 @@ export function LandingPage() {
             </div>
           </div>
         </div>
-        {/* Background Pattern/Image placeholder */}
         <div className="absolute top-0 right-0 w-1/2 h-full opacity-10 pointer-events-none hidden lg:block">
           <div className="w-full h-full bg-[url('https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center" />
         </div>
@@ -44,42 +52,80 @@ export function LandingPage() {
               <Link to="/courses">Voir tout le catalogue &rarr;</Link>
             </Button>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* Mock Course Cards */}
-            {[1, 2, 3].map((i) => (
-              <Card key={i} className="overflow-hidden hover:shadow-lg transition-shadow">
-                <div className="h-48 bg-gray-200 relative">
-                  <img 
-                    src={`https://images.unsplash.com/photo-1543286386-713df548e9cc?w=800&auto=format&fit=crop&q=60`} 
-                    alt="Course thumbnail" 
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute top-2 right-2 bg-white px-2 py-1 rounded text-xs font-bold shadow-sm">
-                    4.8 <Star className="w-3 h-3 inline text-yellow-400 fill-current" />
+            {featuredCourses.length > 0 ? (
+              featuredCourses.map((course: any) => (
+                <Card key={course._id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                  <div className="h-48 bg-gray-200 relative">
+                    {course.image_url ? (
+                      <img
+                        src={course.image_url}
+                        alt={course.title}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gray-200 text-gray-400">
+                        <BookOpen className="w-12 h-12" />
+                      </div>
+                    )}
+                    {course.average_rating > 0 && (
+                      <div className="absolute top-2 right-2 bg-white px-2 py-1 rounded text-xs font-bold shadow-sm">
+                        {course.average_rating.toFixed(1)} <Star className="w-3 h-3 inline text-yellow-400 fill-current" />
+                      </div>
+                    )}
                   </div>
-                </div>
-                <CardHeader className="p-4 pb-2">
-                  <div className="text-xs font-medium text-primary mb-1">DATA SCIENCE</div>
-                  <CardTitle className="text-lg line-clamp-2">Analyse de Données avec Python : De Zéro à Héros</CardTitle>
-                  <CardDescription className="text-sm">Par Jean Dupont</CardDescription>
-                </CardHeader>
-                <CardContent className="p-4 pt-2 text-sm text-gray-600 flex gap-4">
-                  <div className="flex items-center gap-1">
-                    <Clock className="w-4 h-4" /> 12h
+                  <CardHeader className="p-4 pb-2">
+                    <div className="text-xs font-medium text-primary mb-1">{course.domain || course.category || 'COURS'}</div>
+                    <CardTitle className="text-lg line-clamp-2">{course.title}</CardTitle>
+                    <CardDescription className="text-sm">Par {course.instructor?.first_name} {course.instructor?.last_name}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-4 pt-2 text-sm text-gray-600 flex gap-4">
+                    <div className="flex items-center gap-1">
+                      <Clock className="w-4 h-4" /> {course.total_duration_hours ? `${course.total_duration_hours}h` : 'N/A'}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Users className="w-4 h-4" /> {course.enrollments_count || 0}
+                    </div>
+                  </CardContent>
+                  <CardFooter className="p-4 border-t flex justify-between items-center">
+                    <span className="font-bold text-lg">{course.price?.amount?.toLocaleString('fr-FR') || 0} {course.price?.currency || 'FCFA'}</span>
+                    <Button size="sm" asChild>
+                      <Link to={`/courses/${course._id}`}>Voir détails</Link>
+                    </Button>
+                  </CardFooter>
+                </Card>
+              ))
+            ) : (
+              [1, 2, 3].map((i) => (
+                <Card key={i} className="overflow-hidden hover:shadow-lg transition-shadow">
+                  <div className="h-48 bg-gray-200 relative">
+                    <div className="w-full h-full flex items-center justify-center text-gray-400">
+                      <BookOpen className="w-12 h-12" />
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <Users className="w-4 h-4" /> 1.2k
-                  </div>
-                </CardContent>
-                <CardFooter className="p-4 border-t flex justify-between items-center">
-                  <span className="font-bold text-lg">19 650 FCFA</span>
-                  <Button size="sm" asChild>
-                    <Link to={`/courses/${i}`}>Voir détails</Link>
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
+                  <CardHeader className="p-4 pb-2">
+                    <div className="text-xs font-medium text-primary mb-1">DATA SCIENCE</div>
+                    <CardTitle className="text-lg line-clamp-2">Analyse de Données avec Python</CardTitle>
+                    <CardDescription className="text-sm">Bientôt disponible</CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-4 pt-2 text-sm text-gray-600 flex gap-4">
+                    <div className="flex items-center gap-1">
+                      <Clock className="w-4 h-4" /> 12h
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Users className="w-4 h-4" /> 0
+                    </div>
+                  </CardContent>
+                  <CardFooter className="p-4 border-t flex justify-between items-center">
+                    <span className="font-bold text-lg">19 650 FCFA</span>
+                    <Button size="sm" asChild>
+                      <Link to="/courses">Voir détails</Link>
+                    </Button>
+                  </CardFooter>
+                </Card>
+              ))
+            )}
           </div>
         </div>
       </section>
@@ -131,10 +177,12 @@ export function LandingPage() {
                 <div className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-green-500" /> Communauté</div>
               </CardContent>
               <CardFooter>
-                <Button className="w-full" variant="outline">S'inscrire</Button>
+                <Button className="w-full" variant="outline" asChild>
+                  <Link to="/auth/signup">S'inscrire</Link>
+                </Button>
               </CardFooter>
             </Card>
-            
+
             {/* Pro Plan */}
             <Card className="border-primary shadow-lg relative">
               <div className="absolute top-0 right-0 bg-primary text-white text-xs px-2 py-1 rounded-bl">Populaire</div>
@@ -150,7 +198,9 @@ export function LandingPage() {
                 <div className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-green-500" /> Projets guidés</div>
               </CardContent>
               <CardFooter>
-                <Button className="w-full" variant="default">Commencer l'essai</Button>
+                <Button className="w-full" variant="default" asChild>
+                  <Link to="/auth/signup">Commencer l'essai</Link>
+                </Button>
               </CardFooter>
             </Card>
 

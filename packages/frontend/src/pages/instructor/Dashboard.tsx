@@ -16,12 +16,11 @@ export function InstructorDashboard() {
     const courses = coursesData?.data || []
 
     // Calculate stats
-    const totalStudents = courses.reduce((acc: number, course: any) => acc + (course.enrollmentsCount || 0), 0)
-    // Assuming revenue is price * students (simplified)
-    const totalRevenue = courses.reduce((acc: number, course: any) => acc + ((course.price || 0) * (course.enrollmentsCount || 0)), 0)
+    const totalStudents = courses.reduce((acc: number, course: any) => acc + (course.enrollments_count || 0), 0)
+    const totalRevenue = courses.reduce((acc: number, course: any) => acc + ((course.price?.amount || 0) * (course.enrollments_count || 0)), 0)
     const activeCourses = courses.filter((c: any) => c.status === 'published').length
     const averageRating = courses.length > 0
-        ? (courses.reduce((acc: number, c: any) => acc + (c.averageRating || 0), 0) / courses.length).toFixed(1)
+        ? (courses.reduce((acc: number, c: any) => acc + (c.average_rating || 0), 0) / courses.length).toFixed(1)
         : '0.0'
 
     if (isLoading) {
@@ -121,7 +120,7 @@ export function InstructorDashboard() {
                                         <div>
                                             <h3 className="font-bold">{course.title}</h3>
                                             <div className="text-sm text-gray-500">
-                                                {course.status === 'published' ? t('instructor.dashboard.published') : t('instructor.dashboard.draft')} • {course.enrollmentsCount || 0} {t('instructor.dashboard.students')} • {course.averageRating?.toFixed(1) || 'N/A'}/5
+                                                {course.status === 'published' ? t('instructor.dashboard.published') : t('instructor.dashboard.draft')} • {course.enrollments_count || 0} {t('instructor.dashboard.students')} • {course.average_rating?.toFixed(1) || 'N/A'}/5
                                             </div>
                                         </div>
                                     </div>

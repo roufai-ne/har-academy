@@ -43,7 +43,7 @@ export function EditCoursePage() {
         enabled: !!id
     })
 
-    const modules = lessonsData?.data || []
+    const modules = lessonsData?.data?.modules || []
 
     // Mutations
     const updateCourseMutation = useMutation({
