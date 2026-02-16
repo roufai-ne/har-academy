@@ -333,11 +333,24 @@ class CourseController {
         });
       }
 
-      if (req.body.title && req.body.title !== course.title) {
-        req.body.slug = await generateUniqueSlug(Course, req.body.title, course._id);
+      // Whitelist allowed update fields to prevent mass assignment
+      const ALLOWED_UPDATE_FIELDS = [
+        'title', 'description', 'domain', 'category', 'level',
+        'price', 'image_url', 'learning_objectives', 'prerequisites',
+        'tags', 'language'
+      ];
+      const updateData = {};
+      for (const field of ALLOWED_UPDATE_FIELDS) {
+        if (req.body[field] !== undefined) {
+          updateData[field] = req.body[field];
+        }
       }
 
-      Object.assign(course, req.body);
+      if (updateData.title && updateData.title !== course.title) {
+        updateData.slug = await generateUniqueSlug(Course, updateData.title, course._id);
+      }
+
+      Object.assign(course, updateData);
       await course.save();
 
       res.json({

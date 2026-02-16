@@ -14,8 +14,30 @@ class PaymentController {
   // Create payment intent for course purchase
   async createCoursePurchase(req, res) {
     try {
-      const { courseId, amount, currency = 'EUR' } = req.body;
+      const { courseId, currency = 'EUR' } = req.body;
       const userId = req.user.user_id;
+
+      // Fetch course price from course-service (server-side source of truth)
+      let coursePrice;
+      try {
+        const courseServiceUrl = config.courseServiceUrl || process.env.COURSE_SERVICE_URL || 'http://localhost:3002';
+        const courseResponse = await axios.get(
+          `${courseServiceUrl}/api/v1/courses/${encodeURIComponent(courseId)}`
+        );
+        const course = courseResponse.data?.data;
+        if (!course) {
+          return res.status(404).json({ success: false, error: { message: 'Course not found' } });
+        }
+        coursePrice = course.price?.amount;
+        if (!coursePrice || coursePrice <= 0) {
+          return res.status(400).json({ success: false, error: { message: 'Invalid course price' } });
+        }
+      } catch (err) {
+        logger.error('Failed to fetch course price:', err.message);
+        return res.status(502).json({ success: false, error: { message: 'Unable to verify course price' } });
+      }
+
+      const amount = coursePrice; // Use server-side price, NOT client-supplied
 
       // Check for duplicate pending transaction
       const existingPending = await Transaction.findOne({

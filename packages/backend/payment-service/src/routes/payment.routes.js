@@ -33,8 +33,8 @@ const refundSchema = Joi.object({
 // Webhook route (no auth, raw body)
 router.post('/webhook', express.raw({ type: 'application/json' }), paymentController.handleWebhook);
 
-// Verify enrollment (inter-service, no user auth required)
-router.get('/verify-enrollment', paymentController.verifyEnrollment);
+// Verify enrollment (requires auth or service-to-service header)
+router.get('/verify-enrollment', authenticate, paymentController.verifyEnrollment);
 
 // Protected routes
 router.post('/purchase', authenticate, validate(purchaseSchema), paymentController.createCoursePurchase);

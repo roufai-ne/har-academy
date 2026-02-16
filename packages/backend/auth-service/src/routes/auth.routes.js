@@ -23,12 +23,12 @@ const loginSchema = Joi.object({
 const updateProfileSchema = Joi.object({
   first_name: Joi.string(),
   last_name: Joi.string(),
-  avatar_url: Joi.string().uri(),
+  avatar_url: Joi.string().uri({ scheme: ['http', 'https'] }).max(2048),
   language: Joi.string().valid('fr', 'en'),
   instructor_info: Joi.object({
     bio: Joi.string().max(1000),
-    expertise_tags: Joi.array().items(Joi.string()),
-    verification_status: Joi.string().valid('unverified', 'verified', 'rejected')
+    expertise_tags: Joi.array().items(Joi.string().max(50)).max(20)
+    // NOTE: verification_status removed — only admins should change this
   }),
   notification_settings: Joi.object({
     email_notifications: Joi.boolean(),

@@ -2,7 +2,11 @@ const jwt = require('jsonwebtoken');
 const axios = require('axios');
 const config = require('../config');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-jwt-secret';
+const nodeEnv = process.env.NODE_ENV || 'development';
+const JWT_SECRET = process.env.JWT_SECRET || (nodeEnv !== 'production' ? 'dev-only-jwt-secret-do-not-use-in-prod' : undefined);
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is required in production');
+}
 
 // JWT verification middleware — local verify first, remote fallback
 const verifyToken = async (req, res, next) => {

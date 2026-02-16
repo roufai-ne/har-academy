@@ -26,15 +26,27 @@ const logger = winston.createLogger({
 app.use(helmet());
 app.use(cors(config.cors));
 app.use(morgan('combined', { stream: { write: msg => logger.info(msg.trim()) } }));
-app.use(express.json());
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
   message: { success: false, error: { message: 'Too many requests from this IP' } }
 });
 app.use(limiter);
+
+// Strict rate limiting for auth endpoints
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 15,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, error: { message: 'Too many auth attempts, please try again later' } }
+});
 
 // Health check
 app.get('/health', (req, res) => {
@@ -77,36 +89,41 @@ const services = {
   }
 };
 
-// Create proxies
-Object.entries(services).forEach(([name, serviceConfig]) => {
-  logger.info(`Setting up proxy for /api/v1/${name} -> ${serviceConfig.target}`);
-  app.use(
-    `/api/v1/${name}`,
-    createProxyMiddleware({
-      target: serviceConfig.target,
-      changeOrigin: true,
-      pathRewrite: serviceConfig.pathRewrite,
-      logLevel: 'warn',
-      onProxyReq: (proxyReq, req) => {
-        // Re-stream the body if it exists
-        if (req.body && Object.keys(req.body).length > 0) {
-          const bodyData = JSON.stringify(req.body);
-          proxyReq.setHeader('Content-Type', 'application/json');
-          proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
-          proxyReq.write(bodyData);
-        }
-
-        logger.info(`Proxying ${req.method} ${req.path} to ${name} service`);
-      },
-      onError: (err, req, res) => {
-        logger.error(`Proxy error for ${name} service: ${err.message}`);
-        res.status(502).json({
-          success: false,
-          error: { message: `Service ${name} unavailable` }
-        });
+// Shared proxy options
+const createProxy = (name, serviceConfig) =>
+  createProxyMiddleware({
+    target: serviceConfig.target,
+    changeOrigin: true,
+    pathRewrite: serviceConfig.pathRewrite,
+    logLevel: 'warn',
+    timeout: 30000,
+    proxyTimeout: 30000,
+    onProxyReq: (proxyReq, req) => {
+      if (req.body && Object.keys(req.body).length > 0) {
+        const bodyData = JSON.stringify(req.body);
+        proxyReq.setHeader('Content-Type', 'application/json');
+        proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
+        proxyReq.write(bodyData);
       }
-    })
-  );
+      logger.info(`Proxying ${req.method} ${req.path}`);
+    },
+    onError: (err, req, res) => {
+      logger.error(`Proxy error for ${name}: ${err.message}`);
+      res.status(502).json({
+        success: false,
+        error: { message: 'Backend service unavailable' }
+      });
+    }
+  });
+
+// Apply auth rate limiter to auth routes
+app.use('/api/v1/auth', authLimiter, createProxy('auth', services.auth));
+
+// Other proxies
+Object.entries(services).forEach(([name, serviceConfig]) => {
+  if (name === 'auth') return; // already registered above
+  logger.info(`Setting up proxy for /api/v1/${name} -> ${serviceConfig.target}`);
+  app.use(`/api/v1/${name}`, createProxy(name, serviceConfig));
 });
 
 // 404 handler
