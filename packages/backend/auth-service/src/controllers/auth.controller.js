@@ -145,7 +145,7 @@ class AuthController {
       logger.error('Failed to fetch user:', error);
       res.status(400).json({
         success: false,
-        error: { message: error.message }
+        error: { message: 'Failed to fetch user profile' }
       });
     }
   }
@@ -197,7 +197,7 @@ class AuthController {
       logger.error('Profile update failed:', error);
       res.status(400).json({
         success: false,
-        error: { message: error.message }
+        error: { message: 'Profile update failed' }
       });
     }
   }
@@ -238,7 +238,7 @@ class AuthController {
       logger.error('Password change failed:', error);
       res.status(400).json({
         success: false,
-        error: { message: error.message }
+        error: { message: 'Password change failed' }
       });
     }
   }
@@ -275,7 +275,7 @@ class AuthController {
       logger.error('Password reset request failed:', error);
       res.status(400).json({
         success: false,
-        error: { message: error.message }
+        error: { message: 'Password reset request failed' }
       });
     }
   }
@@ -314,7 +314,7 @@ class AuthController {
       logger.error('Password reset failed:', error);
       res.status(400).json({
         success: false,
-        error: { message: error.message }
+        error: { message: 'Password reset failed' }
       });
     }
   }
@@ -346,7 +346,7 @@ class AuthController {
       logger.error('Email verification failed:', error);
       res.status(400).json({
         success: false,
-        error: { message: error.message }
+        error: { message: 'Email verification failed' }
       });
     }
   }
@@ -419,7 +419,7 @@ class AuthController {
       logger.error('Logout failed:', error);
       res.status(400).json({
         success: false,
-        error: { message: error.message }
+        error: { message: 'Logout failed' }
       });
     }
   }
@@ -460,7 +460,7 @@ class AuthController {
       logger.error('Failed to fetch public profile:', error);
       res.status(400).json({
         success: false,
-        error: { message: error.message }
+        error: { message: 'Failed to fetch profile' }
       });
     }
   }

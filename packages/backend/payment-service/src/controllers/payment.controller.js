@@ -4,6 +4,8 @@ const config = require('../config');
 const axios = require('axios');
 const logger = require('../utils/logger');
 
+const SERVICE_CALL_TIMEOUT = 5000; // 5 second timeout for inter-service calls
+
 const PLAN_PRICING = {
   basic: { monthly: 9.99, yearly: 99.99 },
   pro: { monthly: 19.99, yearly: 199.99 },
@@ -22,7 +24,8 @@ class PaymentController {
       try {
         const courseServiceUrl = config.courseServiceUrl || process.env.COURSE_SERVICE_URL || 'http://localhost:3002';
         const courseResponse = await axios.get(
-          `${courseServiceUrl}/api/v1/courses/${encodeURIComponent(courseId)}`
+          `${courseServiceUrl}/api/v1/courses/${encodeURIComponent(courseId)}`,
+          { timeout: SERVICE_CALL_TIMEOUT }
         );
         const course = courseResponse.data?.data;
         if (!course) {
@@ -562,7 +565,8 @@ class PaymentController {
               headers: {
                 'X-Service-Auth': config.serviceSecret || process.env.SERVICE_SECRET,
                 'X-User-Id': transaction.user.toString()
-              }
+              },
+              timeout: SERVICE_CALL_TIMEOUT
             }
           );
         } catch (error) {
@@ -680,7 +684,8 @@ class PaymentController {
             {
               headers: {
                 'X-Service-Auth': config.serviceSecret || process.env.SERVICE_SECRET
-              }
+              },
+              timeout: SERVICE_CALL_TIMEOUT
             }
           );
           logger.info(`Enrollment created for user ${transaction.user} in course ${transaction.course}`);
@@ -785,7 +790,8 @@ class PaymentController {
               headers: {
                 'X-Service-Auth': config.serviceSecret || process.env.SERVICE_SECRET,
                 'X-User-Id': transaction.user.toString()
-              }
+              },
+              timeout: SERVICE_CALL_TIMEOUT
             }
           );
         } catch (error) {
