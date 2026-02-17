@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const { User } = require('../models');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
@@ -61,7 +62,7 @@ class AuthController {
       logger.error('Registration failed:', error);
       res.status(400).json({
         success: false,
-        error: { message: error.message }
+        error: { message: 'Registration failed' }
       });
     }
   }
@@ -119,7 +120,7 @@ class AuthController {
       logger.error('Login failed:', error);
       res.status(400).json({
         success: false,
-        error: { message: error.message }
+        error: { message: 'Login failed' }
       });
     }
   }
@@ -268,9 +269,7 @@ class AuthController {
 
       res.json({
         success: true,
-        message: 'If the email exists, a reset link will be sent',
-        // For testing only - remove in production
-        resetToken: config.nodeEnv === 'development' ? resetToken : undefined
+        message: 'If the email exists, a reset link will be sent'
       });
     } catch (error) {
       logger.error('Password reset request failed:', error);
@@ -428,6 +427,13 @@ class AuthController {
   // Get public profile by user ID
   async getPublicProfile(req, res) {
     try {
+      if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+        return res.status(400).json({
+          success: false,
+          error: { message: 'Invalid user ID' }
+        });
+      }
+
       const user = await User.findById(req.params.id);
 
       if (!user || user.status !== 'active') {

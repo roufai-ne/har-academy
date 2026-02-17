@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const config = require('../config');
 
 const userSchema = new mongoose.Schema({
   email: {
@@ -129,8 +130,8 @@ userSchema.methods.generateToken = function () {
       first_name: this.first_name,
       last_name: this.last_name,
     },
-    process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRY || '24h' }
+    config.jwt.secret,
+    { algorithm: 'HS256', expiresIn: config.jwt.expiresIn }
   );
 };
 
@@ -140,8 +141,8 @@ userSchema.methods.generateRefreshToken = function () {
     {
       user_id: this._id,
     },
-    process.env.JWT_REFRESH_SECRET,
-    { expiresIn: process.env.JWT_REFRESH_EXPIRY || '7d' }
+    config.jwt.refreshSecret,
+    { algorithm: 'HS256', expiresIn: config.jwt.refreshExpiresIn }
   );
 };
 

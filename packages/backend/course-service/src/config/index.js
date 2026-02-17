@@ -16,7 +16,7 @@ const config = {
     }
   },
   jwt: {
-    secret: process.env.JWT_SECRET || 'your-secret-key',
+    secret: process.env.JWT_SECRET || (process.env.NODE_ENV !== 'production' ? 'dev-only-jwt-secret-do-not-use-in-prod' : undefined),
     expiresIn: process.env.JWT_EXPIRES_IN || '7d'
   },
   services: {

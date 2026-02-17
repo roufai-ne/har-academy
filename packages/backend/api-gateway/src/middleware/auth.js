@@ -22,8 +22,9 @@ const verifyToken = async (req, res, next) => {
 
     // Try local JWT verification first (faster, no network call)
     try {
-      const decoded = jwt.verify(token, JWT_SECRET);
+      const decoded = jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] });
       req.user = {
+        user_id: decoded.user_id,
         id: decoded.user_id,
         email: decoded.email,
         role: decoded.role
@@ -88,8 +89,9 @@ const optionalAuth = async (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET);
+    const decoded = jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] });
     req.user = {
+      user_id: decoded.user_id,
       id: decoded.user_id,
       email: decoded.email,
       role: decoded.role

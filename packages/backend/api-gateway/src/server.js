@@ -52,8 +52,7 @@ const authLimiter = rateLimit({
 app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
-    service: 'api-gateway',
-    uptime: process.uptime()
+    service: 'api-gateway'
   });
 });
 

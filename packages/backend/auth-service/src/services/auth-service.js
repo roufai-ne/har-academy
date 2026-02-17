@@ -117,7 +117,34 @@ class AuthService {
       throw new CustomError('User not found', 404, 'USER_NOT_FOUND');
     }
 
-    Object.assign(user, updateData);
+    // Whitelist allowed fields to prevent mass assignment
+    const allowedFields = ['first_name', 'last_name', 'avatar_url', 'language'];
+    for (const field of allowedFields) {
+      if (updateData[field] !== undefined) {
+        user[field] = updateData[field];
+      }
+    }
+
+    // Handle instructor_info separately with whitelist
+    if (updateData.instructor_info && user.role === 'instructor') {
+      const allowedInstructorFields = ['bio', 'expertise_tags'];
+      for (const field of allowedInstructorFields) {
+        if (updateData.instructor_info[field] !== undefined) {
+          user.instructor_info[field] = updateData.instructor_info[field];
+        }
+      }
+    }
+
+    // Handle notification_settings with whitelist
+    if (updateData.notification_settings) {
+      const allowedNotifFields = ['email_notifications', 'marketing_emails', 'newsletter'];
+      for (const field of allowedNotifFields) {
+        if (updateData.notification_settings[field] !== undefined) {
+          user.notification_settings[field] = updateData.notification_settings[field];
+        }
+      }
+    }
+
     await user.save();
 
     logger.info('User profile updated:', { userId: user._id });

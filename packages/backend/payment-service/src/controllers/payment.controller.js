@@ -95,7 +95,7 @@ class PaymentController {
       logger.error('Course purchase creation failed:', error);
       res.status(400).json({
         success: false,
-        error: { message: error.message }
+        error: { message: 'Course purchase creation failed' }
       });
     }
   }
@@ -175,7 +175,7 @@ class PaymentController {
       logger.error('Subscription creation failed:', error);
       res.status(400).json({
         success: false,
-        error: { message: error.message }
+        error: { message: 'Subscription creation failed' }
       });
     }
   }
@@ -234,7 +234,7 @@ class PaymentController {
       logger.error('Subscription change failed:', error);
       res.status(400).json({
         success: false,
-        error: { message: error.message }
+        error: { message: 'Subscription change failed' }
       });
     }
   }
@@ -271,7 +271,7 @@ class PaymentController {
       logger.error('Subscription reactivation failed:', error);
       res.status(400).json({
         success: false,
-        error: { message: error.message }
+        error: { message: 'Subscription reactivation failed' }
       });
     }
   }
@@ -323,7 +323,7 @@ class PaymentController {
       logger.error('Failed to fetch transactions:', error);
       res.status(400).json({
         success: false,
-        error: { message: error.message }
+        error: { message: 'Failed to fetch transactions' }
       });
     }
   }
@@ -349,7 +349,7 @@ class PaymentController {
       logger.error('Failed to fetch subscription:', error);
       res.status(400).json({
         success: false,
-        error: { message: error.message }
+        error: { message: 'Failed to fetch subscription' }
       });
     }
   }
@@ -382,7 +382,7 @@ class PaymentController {
       logger.error('Subscription cancellation failed:', error);
       res.status(400).json({
         success: false,
-        error: { message: error.message }
+        error: { message: 'Subscription cancellation failed' }
       });
     }
   }
@@ -433,7 +433,7 @@ class PaymentController {
       logger.error('Failed to fetch entitlements:', error);
       res.status(400).json({
         success: false,
-        error: { message: error.message }
+        error: { message: 'Failed to fetch entitlements' }
       });
     }
   }
@@ -447,6 +447,15 @@ class PaymentController {
         return res.status(400).json({
           success: false,
           error: { message: 'userId and courseId query params are required' }
+        });
+      }
+
+      // Authorization: users can only check their own enrollment, admins and services can check any
+      const isServiceCall = req.headers['x-service-auth'] === config.serviceSecret;
+      if (!isServiceCall && req.user && req.user.user_id !== userId && req.user.role !== 'admin') {
+        return res.status(403).json({
+          success: false,
+          error: { message: 'Not authorized to verify this enrollment' }
         });
       }
 
@@ -482,7 +491,7 @@ class PaymentController {
       logger.error('Verify enrollment failed:', error);
       res.status(400).json({
         success: false,
-        error: { message: error.message }
+        error: { message: 'Verification failed' }
       });
     }
   }
@@ -572,7 +581,7 @@ class PaymentController {
       logger.error('Refund failed:', error);
       res.status(400).json({
         success: false,
-        error: { message: error.message }
+        error: { message: 'Refund processing failed' }
       });
     }
   }
@@ -624,7 +633,7 @@ class PaymentController {
       res.json({ received: true });
     } catch (error) {
       logger.error('Webhook handling failed:', error);
-      res.status(400).json({ error: error.message });
+      res.status(400).json({ error: 'Webhook processing failed' });
     }
   }
 
@@ -634,6 +643,12 @@ class PaymentController {
     });
 
     if (transaction) {
+      // Idempotency: skip if already completed (duplicate webhook)
+      if (transaction.status === 'completed') {
+        logger.info(`Payment already processed for transaction ${transaction._id}, skipping`);
+        return;
+      }
+
       await transaction.markCompleted();
 
       // Store payment method info

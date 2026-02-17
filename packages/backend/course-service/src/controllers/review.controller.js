@@ -1,15 +1,23 @@
 const { Review, Course, Enrollment } = require('../models');
 const { formatError } = require('../utils/helpers');
 
+const MAX_PAGE_LIMIT = 100;
+
+// Helper to consistently extract user ID from JWT payload
+function getUserId(user) {
+  return user.user_id || user.id || user._id;
+}
+
 class ReviewController {
   // Create a review
   async createReview(req, res) {
     try {
       const { courseId, rating, title, content } = req.body;
+      const userId = getUserId(req.user);
 
       // Check if user is enrolled and completed the course
       const enrollment = await Enrollment.findOne({
-        student: req.user.id,
+        student: userId,
         course: courseId,
         status: 'completed'
       });
@@ -23,7 +31,7 @@ class ReviewController {
 
       // Check if user already reviewed
       const existingReview = await Review.findOne({
-        student: req.user.id,
+        student: userId,
         course: courseId
       });
 
@@ -36,7 +44,7 @@ class ReviewController {
 
       const review = new Review({
         course: courseId,
-        student: req.user.id,
+        student: userId,
         rating,
         title,
         content,
@@ -69,14 +77,21 @@ class ReviewController {
         rating: { rating: -1 }
       };
 
+      // Validate sort parameter
+      const sortOption = sortOptions[sort] || sortOptions.newest;
+
+      // Enforce pagination limits
+      const safePage = Math.max(1, parseInt(page) || 1);
+      const safeLimit = Math.min(Math.max(1, parseInt(limit) || 10), MAX_PAGE_LIMIT);
+
       const reviews = await Review.find({
         course: courseId,
         status: 'approved'
       })
         .populate('student', 'name avatar')
-        .sort(sortOptions[sort])
-        .skip((page - 1) * limit)
-        .limit(parseInt(limit));
+        .sort(sortOption)
+        .skip((safePage - 1) * safeLimit)
+        .limit(safeLimit);
 
       const total = await Review.countDocuments({
         course: courseId,
@@ -87,8 +102,8 @@ class ReviewController {
         success: true,
         data: reviews,
         pagination: {
-          currentPage: parseInt(page),
-          totalPages: Math.ceil(total / limit),
+          currentPage: safePage,
+          totalPages: Math.ceil(total / safeLimit),
           totalReviews: total
         }
       });
@@ -103,6 +118,7 @@ class ReviewController {
   // Update review
   async updateReview(req, res) {
     try {
+      const userId = getUserId(req.user);
       const review = await Review.findById(req.params.id);
 
       if (!review) {
@@ -112,7 +128,7 @@ class ReviewController {
         });
       }
 
-      if (review.student.toString() !== req.user.id) {
+      if (review.student.toString() !== userId) {
         return res.status(403).json({
           success: false,
           error: { message: 'Not authorized to update this review' }
@@ -129,8 +145,10 @@ class ReviewController {
       }
 
       const { rating, title, content } = req.body;
-      Object.assign(review, { rating, title, content });
-      
+      if (rating !== undefined) review.rating = rating;
+      if (title !== undefined) review.title = title;
+      if (content !== undefined) review.content = content;
+
       await review.save();
 
       res.json({
@@ -148,6 +166,7 @@ class ReviewController {
   // Delete review
   async deleteReview(req, res) {
     try {
+      const userId = getUserId(req.user);
       const review = await Review.findById(req.params.id);
 
       if (!review) {
@@ -157,14 +176,14 @@ class ReviewController {
         });
       }
 
-      if (review.student.toString() !== req.user.id) {
+      if (review.student.toString() !== userId) {
         return res.status(403).json({
           success: false,
           error: { message: 'Not authorized to delete this review' }
         });
       }
 
-      await review.remove();
+      await Review.deleteOne({ _id: review._id });
 
       res.json({
         success: true,
@@ -181,6 +200,7 @@ class ReviewController {
   // Mark review as helpful
   async markReviewHelpful(req, res) {
     try {
+      const userId = getUserId(req.user);
       const review = await Review.findById(req.params.id);
 
       if (!review) {
@@ -191,10 +211,10 @@ class ReviewController {
       }
 
       // Check if user already marked as helpful
-      const userIndex = review.helpful.users.indexOf(req.user.id);
-      
+      const userIndex = review.helpful.users.indexOf(userId);
+
       if (userIndex === -1) {
-        review.helpful.users.push(req.user.id);
+        review.helpful.users.push(userId);
         review.helpful.count += 1;
       } else {
         review.helpful.users.splice(userIndex, 1);
@@ -218,6 +238,7 @@ class ReviewController {
   // Report review
   async reportReview(req, res) {
     try {
+      const userId = getUserId(req.user);
       const review = await Review.findById(req.params.id);
       const { reason } = req.body;
 
@@ -229,17 +250,17 @@ class ReviewController {
       }
 
       // Check if user already reported
-      if (review.reported.users.includes(req.user.id)) {
+      if (review.reported.users.includes(userId)) {
         return res.status(400).json({
           success: false,
           error: { message: 'You have already reported this review' }
         });
       }
 
-      review.reported.users.push(req.user.id);
+      review.reported.users.push(userId);
       review.reported.count += 1;
       review.reported.reasons.push({
-        user: req.user.id,
+        user: userId,
         reason
       });
 
@@ -265,6 +286,7 @@ class ReviewController {
   // Moderate review (admin only)
   async moderateReview(req, res) {
     try {
+      const userId = getUserId(req.user);
       const review = await Review.findById(req.params.id);
       const { status, reason } = req.body;
 
@@ -277,7 +299,7 @@ class ReviewController {
 
       review.status = status;
       review.moderation = {
-        moderatedBy: req.user.id,
+        moderatedBy: userId,
         moderatedAt: new Date(),
         reason
       };

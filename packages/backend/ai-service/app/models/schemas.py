@@ -74,9 +74,13 @@ class QuizGenerationResponse(BaseModel):
 
 # ============= Chatbot Models =============
 
+class ChatRole(str, Enum):
+    USER = "user"
+    ASSISTANT = "assistant"
+
 class ChatMessage(BaseModel):
-    role: str  # "user" or "assistant"
-    content: str
+    role: ChatRole
+    content: str = Field(..., max_length=10000)
     timestamp: Optional[datetime] = None
 
 class ChatSource(BaseModel):
@@ -88,7 +92,7 @@ class ChatSource(BaseModel):
         populate_by_name = True
 
 class ChatRequest(BaseModel):
-    message: str
+    message: str = Field(..., max_length=5000)
     course_id: str = Field(..., alias="courseId")
     lesson_id: Optional[str] = Field(None, alias="lessonId")
     conversation_id: Optional[str] = Field(None, alias="conversationId")
