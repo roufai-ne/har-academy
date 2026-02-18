@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 from typing import List, Optional, Dict
 from datetime import datetime
 from app.services.chatbot_service import chatbot_service
@@ -12,10 +12,10 @@ router = APIRouter()
 
 
 class SimpleChatRequest(BaseModel):
-    userId: str
-    courseId: Optional[str] = None
-    message: str
-    conversationHistory: Optional[List[ChatMessage]] = []
+    userId: str = Field(..., min_length=1, max_length=100)
+    courseId: Optional[str] = Field(None, max_length=100)
+    message: str = Field(..., min_length=1, max_length=5000)
+    conversationHistory: Optional[List[ChatMessage]] = Field(default=[], max_length=50)
 
 
 class ChatResponse(BaseModel):
@@ -127,10 +127,10 @@ async def ask_question(request: SimpleChatRequest):
 
 
 class FeedbackRequest(BaseModel):
-    userId: str
-    messageId: str
+    userId: str = Field(..., min_length=1, max_length=100)
+    messageId: str = Field(..., min_length=1, max_length=100)
     helpful: bool
-    comment: Optional[str] = None
+    comment: Optional[str] = Field(None, max_length=1000)
 
 
 @router.post("/feedback")
@@ -146,6 +146,7 @@ async def submit_feedback(request: FeedbackRequest):
 @router.get("/history/{user_id}")
 async def get_conversation_history(user_id: str, limit: int = 20):
     """Retrieve user's conversation history."""
+    limit = min(max(1, limit), 100)  # Cap between 1 and 100
     return {
         "userId": user_id,
         "conversations": [],

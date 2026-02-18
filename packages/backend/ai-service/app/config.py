@@ -4,7 +4,7 @@ from typing import List
 class Settings(BaseSettings):
     # App
     app_name: str = "HAR Academy AI Service"
-    debug: bool = True
+    debug: bool = False
     ai_service_port: int = 8001
     log_level: str = "info"
     

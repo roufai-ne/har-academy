@@ -9,7 +9,12 @@ class CategoryController {
       const slug = await generateUniqueSlug(Category, name);
 
       const category = new Category({
-        ...req.body,
+        name,
+        description,
+        parent: req.body.parent,
+        icon: req.body.icon,
+        isActive: req.body.isActive,
+        order: req.body.order,
         slug
       });
 
@@ -122,11 +127,17 @@ class CategoryController {
         });
       }
 
-      if (req.body.name && req.body.name !== category.name) {
-        req.body.slug = await generateUniqueSlug(Category, req.body.name, category._id);
+      // Whitelist allowed fields to prevent mass assignment
+      const allowedFields = ['name', 'description', 'parent', 'icon', 'isActive', 'order'];
+      for (const field of allowedFields) {
+        if (req.body[field] !== undefined) {
+          category[field] = req.body[field];
+        }
       }
 
-      Object.assign(category, req.body);
+      if (req.body.name && req.body.name !== category.name) {
+        category.slug = await generateUniqueSlug(Category, req.body.name, category._id);
+      }
       await category.save();
 
       res.json({

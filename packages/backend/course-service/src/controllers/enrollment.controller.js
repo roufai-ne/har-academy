@@ -99,7 +99,7 @@ class EnrollmentController {
   async serviceEnroll(req, res) {
     try {
       const serviceAuth = req.headers['x-service-auth'];
-      if (serviceAuth !== (process.env.SERVICE_SECRET || 'service-to-service-secret')) {
+      if (!config.serviceSecret || serviceAuth !== config.serviceSecret) {
         return res.status(403).json({
           success: false,
           error: { message: 'Invalid service authentication' }
@@ -173,7 +173,7 @@ class EnrollmentController {
   async serviceRevoke(req, res) {
     try {
       const serviceAuth = req.headers['x-service-auth'];
-      if (serviceAuth !== (process.env.SERVICE_SECRET || 'service-to-service-secret')) {
+      if (!config.serviceSecret || serviceAuth !== config.serviceSecret) {
         return res.status(403).json({
           success: false,
           error: { message: 'Invalid service authentication' }

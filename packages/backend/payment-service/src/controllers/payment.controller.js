@@ -4,6 +4,8 @@ const config = require('../config');
 const axios = require('axios');
 const logger = require('../utils/logger');
 
+const SERVICE_CALL_TIMEOUT = 5000; // 5 second timeout for inter-service calls
+
 const PLAN_PRICING = {
   basic: { monthly: 9.99, yearly: 99.99 },
   pro: { monthly: 19.99, yearly: 199.99 },
@@ -14,8 +16,31 @@ class PaymentController {
   // Create payment intent for course purchase
   async createCoursePurchase(req, res) {
     try {
-      const { courseId, amount, currency = 'EUR' } = req.body;
+      const { courseId, currency = 'EUR' } = req.body;
       const userId = req.user.user_id;
+
+      // Fetch course price from course-service (server-side source of truth)
+      let coursePrice;
+      try {
+        const courseServiceUrl = config.courseServiceUrl || process.env.COURSE_SERVICE_URL || 'http://localhost:3002';
+        const courseResponse = await axios.get(
+          `${courseServiceUrl}/api/v1/courses/${encodeURIComponent(courseId)}`,
+          { timeout: SERVICE_CALL_TIMEOUT }
+        );
+        const course = courseResponse.data?.data;
+        if (!course) {
+          return res.status(404).json({ success: false, error: { message: 'Course not found' } });
+        }
+        coursePrice = course.price?.amount;
+        if (!coursePrice || coursePrice <= 0) {
+          return res.status(400).json({ success: false, error: { message: 'Invalid course price' } });
+        }
+      } catch (err) {
+        logger.error('Failed to fetch course price:', err.message);
+        return res.status(502).json({ success: false, error: { message: 'Unable to verify course price' } });
+      }
+
+      const amount = coursePrice; // Use server-side price, NOT client-supplied
 
       // Check for duplicate pending transaction
       const existingPending = await Transaction.findOne({
@@ -73,7 +98,7 @@ class PaymentController {
       logger.error('Course purchase creation failed:', error);
       res.status(400).json({
         success: false,
-        error: { message: error.message }
+        error: { message: 'Course purchase creation failed' }
       });
     }
   }
@@ -153,7 +178,7 @@ class PaymentController {
       logger.error('Subscription creation failed:', error);
       res.status(400).json({
         success: false,
-        error: { message: error.message }
+        error: { message: 'Subscription creation failed' }
       });
     }
   }
@@ -212,7 +237,7 @@ class PaymentController {
       logger.error('Subscription change failed:', error);
       res.status(400).json({
         success: false,
-        error: { message: error.message }
+        error: { message: 'Subscription change failed' }
       });
     }
   }
@@ -249,7 +274,7 @@ class PaymentController {
       logger.error('Subscription reactivation failed:', error);
       res.status(400).json({
         success: false,
-        error: { message: error.message }
+        error: { message: 'Subscription reactivation failed' }
       });
     }
   }
@@ -301,7 +326,7 @@ class PaymentController {
       logger.error('Failed to fetch transactions:', error);
       res.status(400).json({
         success: false,
-        error: { message: error.message }
+        error: { message: 'Failed to fetch transactions' }
       });
     }
   }
@@ -327,7 +352,7 @@ class PaymentController {
       logger.error('Failed to fetch subscription:', error);
       res.status(400).json({
         success: false,
-        error: { message: error.message }
+        error: { message: 'Failed to fetch subscription' }
       });
     }
   }
@@ -360,7 +385,7 @@ class PaymentController {
       logger.error('Subscription cancellation failed:', error);
       res.status(400).json({
         success: false,
-        error: { message: error.message }
+        error: { message: 'Subscription cancellation failed' }
       });
     }
   }
@@ -411,7 +436,7 @@ class PaymentController {
       logger.error('Failed to fetch entitlements:', error);
       res.status(400).json({
         success: false,
-        error: { message: error.message }
+        error: { message: 'Failed to fetch entitlements' }
       });
     }
   }
@@ -425,6 +450,15 @@ class PaymentController {
         return res.status(400).json({
           success: false,
           error: { message: 'userId and courseId query params are required' }
+        });
+      }
+
+      // Authorization: users can only check their own enrollment, admins and services can check any
+      const isServiceCall = req.headers['x-service-auth'] === config.serviceSecret;
+      if (!isServiceCall && req.user && req.user.user_id !== userId && req.user.role !== 'admin') {
+        return res.status(403).json({
+          success: false,
+          error: { message: 'Not authorized to verify this enrollment' }
         });
       }
 
@@ -460,7 +494,7 @@ class PaymentController {
       logger.error('Verify enrollment failed:', error);
       res.status(400).json({
         success: false,
-        error: { message: error.message }
+        error: { message: 'Verification failed' }
       });
     }
   }
@@ -531,7 +565,8 @@ class PaymentController {
               headers: {
                 'X-Service-Auth': config.serviceSecret || process.env.SERVICE_SECRET,
                 'X-User-Id': transaction.user.toString()
-              }
+              },
+              timeout: SERVICE_CALL_TIMEOUT
             }
           );
         } catch (error) {
@@ -550,7 +585,7 @@ class PaymentController {
       logger.error('Refund failed:', error);
       res.status(400).json({
         success: false,
-        error: { message: error.message }
+        error: { message: 'Refund processing failed' }
       });
     }
   }
@@ -602,7 +637,7 @@ class PaymentController {
       res.json({ received: true });
     } catch (error) {
       logger.error('Webhook handling failed:', error);
-      res.status(400).json({ error: error.message });
+      res.status(400).json({ error: 'Webhook processing failed' });
     }
   }
 
@@ -612,6 +647,12 @@ class PaymentController {
     });
 
     if (transaction) {
+      // Idempotency: skip if already completed (duplicate webhook)
+      if (transaction.status === 'completed') {
+        logger.info(`Payment already processed for transaction ${transaction._id}, skipping`);
+        return;
+      }
+
       await transaction.markCompleted();
 
       // Store payment method info
@@ -643,7 +684,8 @@ class PaymentController {
             {
               headers: {
                 'X-Service-Auth': config.serviceSecret || process.env.SERVICE_SECRET
-              }
+              },
+              timeout: SERVICE_CALL_TIMEOUT
             }
           );
           logger.info(`Enrollment created for user ${transaction.user} in course ${transaction.course}`);
@@ -748,7 +790,8 @@ class PaymentController {
               headers: {
                 'X-Service-Auth': config.serviceSecret || process.env.SERVICE_SECRET,
                 'X-User-Id': transaction.user.toString()
-              }
+              },
+              timeout: SERVICE_CALL_TIMEOUT
             }
           );
         } catch (error) {

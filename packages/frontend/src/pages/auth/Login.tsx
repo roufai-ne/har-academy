@@ -14,7 +14,7 @@ import { useToast } from '@/components/ui/toaster'
 
 const loginSchema = z.object({
     email: z.string().email({ message: "Email invalide" }),
-    password: z.string().min(6, { message: "Le mot de passe doit contenir au moins 6 caractères" }),
+    password: z.string().min(8, { message: "Le mot de passe doit contenir au moins 8 caractères" }),
 })
 
 type LoginFormValues = z.infer<typeof loginSchema>

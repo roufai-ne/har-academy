@@ -27,7 +27,14 @@ const generateUniqueSlug = async (model, title, existingId = null) => {
   return uniqueSlug;
 };
 
+const MAX_PAGE_LIMIT = 100;
+
 const paginateResults = async (model, query, page = 1, limit = 10, populate = [], sort = {}) => {
+  // Enforce safe pagination values
+  const safeLimit = Math.min(Math.max(1, parseInt(limit) || 10), MAX_PAGE_LIMIT);
+  const safePage = Math.max(1, parseInt(page) || 1);
+  limit = safeLimit;
+  page = safePage;
   const skip = (page - 1) * limit;
   
   const [results, total] = await Promise.all([
