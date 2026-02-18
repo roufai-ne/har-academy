@@ -300,3 +300,11 @@
 {"level":"info","message":"::ffff:127.0.0.1 - - [27/Nov/2025:11:12:22 +0000] \"DELETE /api/v1/courses/6928321694e5b7dc4510b43e/modules/6928321694e5b7dc4510b440/lessons/6928321694e5b7dc4510b442 HTTP/1.1\" 200 56 \"-\" \"-\"","service":"har-academy-course-service","timestamp":"2025-11-27 12:12:22"}
 {"level":"info","message":"::ffff:127.0.0.1 - - [27/Nov/2025:11:12:22 +0000] \"DELETE /api/v1/courses/6928321694e5b7dc4510b44f/modules/6928321694e5b7dc4510b451/lessons/6928321694e5b7dc4510b453 HTTP/1.1\" 403 54 \"-\" \"-\"","service":"har-academy-course-service","timestamp":"2025-11-27 12:12:22"}
 {"level":"info","message":"::ffff:127.0.0.1 - - [27/Nov/2025:11:12:22 +0000] \"GET /api/v1/courses/6928321694e5b7dc4510b45c/lessons HTTP/1.1\" 200 - \"-\" \"-\"","service":"har-academy-course-service","timestamp":"2025-11-27 12:12:22"}
+{"level":"info","message":"Server running in development mode on port 3002","service":"har-academy-course-service","timestamp":"2026-02-15 15:56:33"}
+{"level":"info","message":"Redis Client Connected","service":"har-academy-course-service","timestamp":"2026-02-15 15:56:33"}
+{"level":"info","message":"Redis connection established","service":"har-academy-course-service","timestamp":"2026-02-15 15:56:33"}
+{"level":"info","message":"MongoDB Connected: localhost","service":"har-academy-course-service","timestamp":"2026-02-15 15:56:35"}
+{"level":"info","message":"Cache MISS: cache:/api/v1/courses?limit=3&sort_by=popular","service":"har-academy-course-service","timestamp":"2026-02-15 16:08:04"}
+{"level":"info","message":"::1 - - [15/Feb/2026:15:08:05 +0000] \"GET /api/v1/courses?limit=3&sort_by=popular HTTP/1.1\" 200 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\"","service":"har-academy-course-service","timestamp":"2026-02-15 16:08:05"}
+{"level":"info","message":"Cache MISS: cache:/api/v1/courses","service":"har-academy-course-service","timestamp":"2026-02-15 16:08:09"}
+{"level":"info","message":"::1 - - [15/Feb/2026:15:08:09 +0000] \"GET /api/v1/courses HTTP/1.1\" 200 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\"","service":"har-academy-course-service","timestamp":"2026-02-15 16:08:09"}

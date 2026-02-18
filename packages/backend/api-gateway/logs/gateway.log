@@ -631,3 +631,104 @@
 {"level":"info","message":"::1 - - [26/Nov/2025:16:43:16 +0000] \"GET /api/v1/auth/profile HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0\"","timestamp":"2025-11-26T16:43:16.212Z"}
 {"level":"info","message":"Proxying GET /api/v1/auth/profile to auth service","timestamp":"2025-11-26T16:43:16.220Z"}
 {"level":"info","message":"::1 - - [26/Nov/2025:16:43:16 +0000] \"GET /api/v1/auth/profile HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0\"","timestamp":"2025-11-26T16:43:16.228Z"}
+{"level":"info","message":"Setting up proxy for /api/v1/auth -> http://localhost:3001","timestamp":"2026-02-15T14:01:29.380Z"}
+{"level":"info","message":"Setting up proxy for /api/v1/courses -> http://localhost:3002","timestamp":"2026-02-15T14:01:29.387Z"}
+{"level":"info","message":"Setting up proxy for /api/v1/enrollments -> http://localhost:3002","timestamp":"2026-02-15T14:01:29.388Z"}
+{"level":"info","message":"Setting up proxy for /api/v1/categories -> http://localhost:3002","timestamp":"2026-02-15T14:01:29.388Z"}
+{"level":"info","message":"Setting up proxy for /api/v1/reviews -> http://localhost:3002","timestamp":"2026-02-15T14:01:29.389Z"}
+{"level":"info","message":"Setting up proxy for /api/v1/payments -> http://localhost:3003","timestamp":"2026-02-15T14:01:29.389Z"}
+{"level":"info","message":"Setting up proxy for /api/v1/ai -> http://localhost:5000","timestamp":"2026-02-15T14:01:29.390Z"}
+{"level":"info","message":"API Gateway running on port 8000","timestamp":"2026-02-15T14:01:29.394Z"}
+{"level":"info","message":"Proxying to services: auth, courses, enrollments, categories, reviews, payments, ai","timestamp":"2026-02-15T14:01:29.394Z"}
+{"level":"info","message":"Proxying GET /api/v1/courses to courses service","timestamp":"2026-02-15T14:02:27.051Z"}
+{"level":"error","message":"Proxy error for courses service: ","timestamp":"2026-02-15T14:02:27.059Z"}
+{"level":"info","message":"::1 - - [15/Feb/2026:14:02:27 +0000] \"GET /api/v1/courses?limit=3&sort_by=popular HTTP/1.1\" 502 67 \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0\"","timestamp":"2026-02-15T14:02:27.067Z"}
+{"level":"info","message":"Proxying GET /api/v1/courses to courses service","timestamp":"2026-02-15T14:02:28.081Z"}
+{"level":"error","message":"Proxy error for courses service: ","timestamp":"2026-02-15T14:02:28.083Z"}
+{"level":"info","message":"::1 - - [15/Feb/2026:14:02:28 +0000] \"GET /api/v1/courses?limit=3&sort_by=popular HTTP/1.1\" 502 67 \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0\"","timestamp":"2026-02-15T14:02:28.084Z"}
+{"level":"info","message":"Proxying GET /api/v1/courses to courses service","timestamp":"2026-02-15T14:02:46.597Z"}
+{"level":"error","message":"Proxy error for courses service: ","timestamp":"2026-02-15T14:02:46.600Z"}
+{"level":"info","message":"::1 - - [15/Feb/2026:14:02:46 +0000] \"GET /api/v1/courses HTTP/1.1\" 502 67 \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0\"","timestamp":"2026-02-15T14:02:46.602Z"}
+{"level":"info","message":"Proxying GET /api/v1/courses to courses service","timestamp":"2026-02-15T14:02:47.631Z"}
+{"level":"error","message":"Proxy error for courses service: ","timestamp":"2026-02-15T14:02:47.633Z"}
+{"level":"info","message":"::1 - - [15/Feb/2026:14:02:47 +0000] \"GET /api/v1/courses HTTP/1.1\" 502 67 \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0\"","timestamp":"2026-02-15T14:02:47.635Z"}
+{"level":"info","message":"Proxying POST /api/v1/auth/login to auth service","timestamp":"2026-02-15T14:03:01.508Z"}
+{"level":"info","message":"::1 - - [15/Feb/2026:14:03:02 +0000] \"POST /api/v1/auth/login HTTP/1.1\" 200 1190 \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0\"","timestamp":"2026-02-15T14:03:02.264Z"}
+{"level":"info","message":"Proxying GET /api/v1/enrollments/my to enrollments service","timestamp":"2026-02-15T14:03:02.347Z"}
+{"level":"error","message":"Proxy error for enrollments service: ","timestamp":"2026-02-15T14:03:02.348Z"}
+{"level":"info","message":"::1 - - [15/Feb/2026:14:03:02 +0000] \"GET /api/v1/enrollments/my HTTP/1.1\" 502 71 \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0\"","timestamp":"2026-02-15T14:03:02.349Z"}
+{"level":"info","message":"Proxying POST /api/v1/recommendations/personalized to ai service","timestamp":"2026-02-15T14:03:02.364Z"}
+{"level":"error","message":"Proxy error for ai service: ","timestamp":"2026-02-15T14:03:02.365Z"}
+{"level":"info","message":"::1 - - [15/Feb/2026:14:03:02 +0000] \"POST /api/v1/ai/recommendations/personalized HTTP/1.1\" 502 62 \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0\"","timestamp":"2026-02-15T14:03:02.366Z"}
+{"level":"info","message":"Proxying GET /api/v1/courses to courses service","timestamp":"2026-02-15T14:03:07.744Z"}
+{"level":"error","message":"Proxy error for courses service: ","timestamp":"2026-02-15T14:03:07.746Z"}
+{"level":"info","message":"::1 - - [15/Feb/2026:14:03:07 +0000] \"GET /api/v1/courses HTTP/1.1\" 502 67 \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0\"","timestamp":"2026-02-15T14:03:07.747Z"}
+{"level":"info","message":"Proxying GET /api/v1/courses to courses service","timestamp":"2026-02-15T14:03:08.768Z"}
+{"level":"error","message":"Proxy error for courses service: ","timestamp":"2026-02-15T14:03:08.770Z"}
+{"level":"info","message":"::1 - - [15/Feb/2026:14:03:08 +0000] \"GET /api/v1/courses HTTP/1.1\" 502 67 \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0\"","timestamp":"2026-02-15T14:03:08.771Z"}
+{"level":"info","message":"Proxying GET /api/v1/enrollments/my to enrollments service","timestamp":"2026-02-15T14:03:10.983Z"}
+{"level":"error","message":"Proxy error for enrollments service: ","timestamp":"2026-02-15T14:03:10.986Z"}
+{"level":"info","message":"::1 - - [15/Feb/2026:14:03:10 +0000] \"GET /api/v1/enrollments/my HTTP/1.1\" 502 71 \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0\"","timestamp":"2026-02-15T14:03:10.988Z"}
+{"level":"info","message":"Proxying POST /api/v1/recommendations/personalized to ai service","timestamp":"2026-02-15T14:03:10.999Z"}
+{"level":"error","message":"Proxy error for ai service: ","timestamp":"2026-02-15T14:03:11.000Z"}
+{"level":"info","message":"::1 - - [15/Feb/2026:14:03:11 +0000] \"POST /api/v1/ai/recommendations/personalized HTTP/1.1\" 502 62 \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0\"","timestamp":"2026-02-15T14:03:11.002Z"}
+{"level":"info","message":"Proxying GET /api/v1/auth/profile to auth service","timestamp":"2026-02-15T14:03:12.467Z"}
+{"level":"info","message":"::1 - - [15/Feb/2026:14:03:12 +0000] \"GET /api/v1/auth/profile HTTP/1.1\" 404 55 \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0\"","timestamp":"2026-02-15T14:03:12.471Z"}
+{"level":"info","message":"Proxying GET /api/v1/auth/profile to auth service","timestamp":"2026-02-15T14:03:12.496Z"}
+{"level":"info","message":"::1 - - [15/Feb/2026:14:03:12 +0000] \"GET /api/v1/auth/profile HTTP/1.1\" 404 55 \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0\"","timestamp":"2026-02-15T14:03:12.499Z"}
+{"level":"info","message":"Proxying GET /api/v1/courses/instructor to courses service","timestamp":"2026-02-15T14:03:18.785Z"}
+{"level":"error","message":"Proxy error for courses service: ","timestamp":"2026-02-15T14:03:18.786Z"}
+{"level":"info","message":"::1 - - [15/Feb/2026:14:03:18 +0000] \"GET /api/v1/courses/instructor HTTP/1.1\" 502 67 \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0\"","timestamp":"2026-02-15T14:03:18.787Z"}
+{"level":"info","message":"Proxying GET /api/v1/courses/instructor to courses service","timestamp":"2026-02-15T14:03:19.802Z"}
+{"level":"error","message":"Proxy error for courses service: ","timestamp":"2026-02-15T14:03:19.803Z"}
+{"level":"info","message":"::1 - - [15/Feb/2026:14:03:19 +0000] \"GET /api/v1/courses/instructor HTTP/1.1\" 502 67 \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0\"","timestamp":"2026-02-15T14:03:19.804Z"}
+{"level":"info","message":"Proxying POST /api/v1/auth/login to auth service","timestamp":"2026-02-15T14:03:39.572Z"}
+{"level":"info","message":"::1 - - [15/Feb/2026:14:03:39 +0000] \"POST /api/v1/auth/login HTTP/1.1\" 401 59 \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0\"","timestamp":"2026-02-15T14:03:39.653Z"}
+{"level":"info","message":"Proxying POST /api/v1/auth/login to auth service","timestamp":"2026-02-15T14:04:50.972Z"}
+{"level":"info","message":"::1 - - [15/Feb/2026:14:04:51 +0000] \"POST /api/v1/auth/login HTTP/1.1\" 200 1190 \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0\"","timestamp":"2026-02-15T14:04:51.075Z"}
+{"level":"info","message":"Proxying GET /api/v1/enrollments/my to enrollments service","timestamp":"2026-02-15T14:04:51.141Z"}
+{"level":"error","message":"Proxy error for enrollments service: ","timestamp":"2026-02-15T14:04:51.142Z"}
+{"level":"info","message":"::1 - - [15/Feb/2026:14:04:51 +0000] \"GET /api/v1/enrollments/my HTTP/1.1\" 502 71 \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0\"","timestamp":"2026-02-15T14:04:51.144Z"}
+{"level":"info","message":"Proxying POST /api/v1/recommendations/personalized to ai service","timestamp":"2026-02-15T14:04:51.154Z"}
+{"level":"error","message":"Proxy error for ai service: ","timestamp":"2026-02-15T14:04:51.155Z"}
+{"level":"info","message":"::1 - - [15/Feb/2026:14:04:51 +0000] \"POST /api/v1/ai/recommendations/personalized HTTP/1.1\" 502 62 \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0\"","timestamp":"2026-02-15T14:04:51.156Z"}
+{"level":"info","message":"Proxying GET /api/v1/courses/instructor to courses service","timestamp":"2026-02-15T14:46:59.533Z"}
+{"level":"error","message":"Proxy error for courses service: ","timestamp":"2026-02-15T14:46:59.534Z"}
+{"level":"info","message":"::1 - - [15/Feb/2026:14:46:59 +0000] \"GET /api/v1/courses/instructor HTTP/1.1\" 502 67 \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0\"","timestamp":"2026-02-15T14:46:59.536Z"}
+{"level":"info","message":"Proxying GET /api/v1/courses/instructor to courses service","timestamp":"2026-02-15T14:47:00.559Z"}
+{"level":"error","message":"Proxy error for courses service: ","timestamp":"2026-02-15T14:47:00.560Z"}
+{"level":"info","message":"::1 - - [15/Feb/2026:14:47:00 +0000] \"GET /api/v1/courses/instructor HTTP/1.1\" 502 67 \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0\"","timestamp":"2026-02-15T14:47:00.561Z"}
+{"level":"info","message":"Proxying GET /api/v1/courses to courses service","timestamp":"2026-02-15T14:47:04.525Z"}
+{"level":"error","message":"Proxy error for courses service: ","timestamp":"2026-02-15T14:47:04.526Z"}
+{"level":"info","message":"::1 - - [15/Feb/2026:14:47:04 +0000] \"GET /api/v1/courses HTTP/1.1\" 502 67 \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0\"","timestamp":"2026-02-15T14:47:04.527Z"}
+{"level":"info","message":"Proxying GET /api/v1/courses to courses service","timestamp":"2026-02-15T14:47:05.556Z"}
+{"level":"error","message":"Proxy error for courses service: ","timestamp":"2026-02-15T14:47:05.557Z"}
+{"level":"info","message":"::1 - - [15/Feb/2026:14:47:05 +0000] \"GET /api/v1/courses HTTP/1.1\" 502 67 \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0\"","timestamp":"2026-02-15T14:47:05.558Z"}
+{"level":"info","message":"Proxying GET /api/v1/courses to courses service","timestamp":"2026-02-15T14:47:07.263Z"}
+{"level":"error","message":"Proxy error for courses service: ","timestamp":"2026-02-15T14:47:07.264Z"}
+{"level":"info","message":"::1 - - [15/Feb/2026:14:47:07 +0000] \"GET /api/v1/courses?domain=Other HTTP/1.1\" 502 67 \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0\"","timestamp":"2026-02-15T14:47:07.266Z"}
+{"level":"info","message":"Proxying GET /api/v1/courses to courses service","timestamp":"2026-02-15T14:47:07.857Z"}
+{"level":"error","message":"Proxy error for courses service: ","timestamp":"2026-02-15T14:47:07.858Z"}
+{"level":"info","message":"::1 - - [15/Feb/2026:14:47:07 +0000] \"GET /api/v1/courses HTTP/1.1\" 502 67 \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0\"","timestamp":"2026-02-15T14:47:07.859Z"}
+{"level":"info","message":"Proxying GET /api/v1/courses to courses service","timestamp":"2026-02-15T14:47:08.877Z"}
+{"level":"error","message":"Proxy error for courses service: ","timestamp":"2026-02-15T14:47:08.880Z"}
+{"level":"info","message":"::1 - - [15/Feb/2026:14:47:08 +0000] \"GET /api/v1/courses HTTP/1.1\" 502 67 \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0\"","timestamp":"2026-02-15T14:47:08.882Z"}
+{"level":"info","message":"Proxying POST /api/v1/auth/register to auth service","timestamp":"2026-02-15T14:47:47.544Z"}
+{"level":"info","message":"::1 - - [15/Feb/2026:14:47:47 +0000] \"POST /api/v1/auth/register HTTP/1.1\" 409 60 \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0\"","timestamp":"2026-02-15T14:47:47.600Z"}
+{"level":"info","message":"Proxying POST /api/v1/auth/register to auth service","timestamp":"2026-02-15T14:49:21.149Z"}
+{"level":"info","message":"::1 - - [15/Feb/2026:14:49:21 +0000] \"POST /api/v1/auth/register HTTP/1.1\" 409 60 \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0\"","timestamp":"2026-02-15T14:49:21.154Z"}
+{"level":"info","message":"Setting up proxy for /api/v1/auth -> http://localhost:3001","timestamp":"2026-02-15T14:59:24.467Z"}
+{"level":"info","message":"Setting up proxy for /api/v1/courses -> http://localhost:3002","timestamp":"2026-02-15T14:59:24.472Z"}
+{"level":"info","message":"Setting up proxy for /api/v1/enrollments -> http://localhost:3002","timestamp":"2026-02-15T14:59:24.473Z"}
+{"level":"info","message":"Setting up proxy for /api/v1/categories -> http://localhost:3002","timestamp":"2026-02-15T14:59:24.473Z"}
+{"level":"info","message":"Setting up proxy for /api/v1/reviews -> http://localhost:3002","timestamp":"2026-02-15T14:59:24.474Z"}
+{"level":"info","message":"Setting up proxy for /api/v1/payments -> http://localhost:3003","timestamp":"2026-02-15T14:59:24.474Z"}
+{"level":"info","message":"Setting up proxy for /api/v1/ai -> http://localhost:5000","timestamp":"2026-02-15T14:59:24.474Z"}
+{"level":"info","message":"API Gateway running on port 8000","timestamp":"2026-02-15T14:59:24.478Z"}
+{"level":"info","message":"Proxying to services: auth, courses, enrollments, categories, reviews, payments, ai","timestamp":"2026-02-15T14:59:24.478Z"}
+{"level":"info","message":"Proxying GET /api/v1/courses to courses service","timestamp":"2026-02-15T15:08:04.573Z"}
+{"level":"info","message":"::1 - - [15/Feb/2026:15:08:05 +0000] \"GET /api/v1/courses?limit=3&sort_by=popular HTTP/1.1\" 200 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\"","timestamp":"2026-02-15T15:08:05.278Z"}
+{"level":"info","message":"Proxying GET /api/v1/courses to courses service","timestamp":"2026-02-15T15:08:09.245Z"}
+{"level":"info","message":"::1 - - [15/Feb/2026:15:08:09 +0000] \"GET /api/v1/courses HTTP/1.1\" 200 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\"","timestamp":"2026-02-15T15:08:09.261Z"}
+{"level":"info","message":"Proxying POST /api/v1/auth/register to auth service","timestamp":"2026-02-15T15:08:42.956Z"}
+{"level":"info","message":"::1 - - [15/Feb/2026:15:08:43 +0000] \"POST /api/v1/auth/register HTTP/1.1\" 409 60 \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0\"","timestamp":"2026-02-15T15:08:43.599Z"}
