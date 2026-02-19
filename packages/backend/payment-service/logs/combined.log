@@ -14,3 +14,5 @@
 {"level":"info","message":"Payment Service running on port 3003 in development mode","timestamp":"2026-02-15T14:01:41.317Z"}
 {"level":"info","message":"MongoDB connected successfully","timestamp":"2026-02-15T14:57:17.578Z"}
 {"level":"info","message":"Payment Service running on port 3003 in development mode","timestamp":"2026-02-15T14:57:17.588Z"}
+{"level":"info","message":"MongoDB connected successfully","timestamp":"2026-02-18T16:05:29.839Z"}
+{"level":"info","message":"Payment Service running on port 3003 in development mode","timestamp":"2026-02-18T16:05:29.845Z"}

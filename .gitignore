@@ -1,19 +1,86 @@
-node_modules
-.env*
-dist
-coverage
+# ─── Dependencies ───────────────────────────────────────────────────────────
+node_modules/
+**/node_modules/
+
+# ─── Environment variables ──────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+.env.development
+.env.test
+.env.production
+# Allow example files to be committed
+!.env.example
+!.env.*.example
+
+# ─── Build outputs ──────────────────────────────────────────────────────────
+dist/
+build/
+.next/
+out/
+*.tsbuildinfo
+
+# ─── Logs ───────────────────────────────────────────────────────────────────
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+# Keep log directories, ignore their contents
+logs/*
+!logs/.gitkeep
+
+# ─── Test & coverage ────────────────────────────────────────────────────────
+coverage/
+.nyc_output/
+*.lcov
+
+# ─── Python ─────────────────────────────────────────────────────────────────
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+.venv/
+venv/
+env/
+*.egg-info/
+.eggs/
+*.egg
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ─── Uploads (keep folder structure, ignore content) ────────────────────────
+packages/backend/course-service/uploads/resources/*
+packages/backend/course-service/uploads/thumbnails/*
+!packages/backend/course-service/uploads/resources/.gitkeep
+!packages/backend/course-service/uploads/thumbnails/.gitkeep
+
+# ─── Docker ─────────────────────────────────────────────────────────────────
+docker-volumes/
+
+# ─── AI / Vector DB data ────────────────────────────────────────────────────
+packages/backend/ai-core-service/data/chromadb/
+
+# ─── OS / editor ────────────────────────────────────────────────────────────
 .DS_Store
-.vscode
-.idea
+Thumbs.db
+.vscode/
+.idea/
 *.iml
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+
+# ─── Misc ───────────────────────────────────────────────────────────────────
 *.bak
 *.tmp
 *.pid
 *.seed
 *.pid.lock
+.cache/
+tmp/
+temp/
